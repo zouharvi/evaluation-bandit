@@ -1,0 +1,31 @@
+[project]
+name = "DUKE-pearmut"
+version = "0.0.0"
+description = "Dynamic Uncertainty K-way Evaluation."
+readme = "README.md"
+license = { text = "apache-2.0" }
+requires-python = ">=3.12"
+authors = [{ name = "Vilém Zouhar", email = "vilem.zouhar@gmail.com" }]
+keywords = [
+    "evaluation",
+    "machine translation",
+    "human evaluation",
+    "annotation",
+]
+dependencies = [
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Repository = "https://github.com/zouharvi/DUKE"
+Issues = "https://github.com/zouharvi/DUKE/issues"
+
+[tool.setuptools]
+package-dir = { "duke" = "src" }
+packages = ["duke"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
