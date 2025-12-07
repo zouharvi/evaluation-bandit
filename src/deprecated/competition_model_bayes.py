@@ -1,4 +1,4 @@
-import competition_models
+import sampler
 import torch
 import pyro
 import pyro.distributions as dist
@@ -7,7 +7,7 @@ import pyro.optim
 from torch.distributions import constraints
 
 
-class CompetitionModelGraphical(competition_models.CompetitionModel):
+class CompetitionModelGraphical(sampler.Sampler):
 
     def __init__(self, systems: list[str]):
         self.systems = systems
