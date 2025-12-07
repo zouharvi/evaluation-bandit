@@ -3,6 +3,7 @@ import random
 import statistics
 import numpy as np
 import itertools
+from DUKE import utils
 
 Result = dict[str, float]
 
@@ -168,7 +169,6 @@ class SamplerCloseUniform(Sampler):
         return statistics.mean(self.scores[model]) if self.scores[model] else 0
     
 
-import scipy.stats
 
 class SamplerCloseCluster(Sampler):
     """
@@ -181,12 +181,6 @@ class SamplerCloseCluster(Sampler):
         super().__init__(models, K)
         self.scores = {model: [] for model in models}
 
-    def pval(self, model1, model2) -> float:
-        scores1 = self.scores[model1]
-        scores2 = self.scores[model2]
-        if len(scores1) < 2 or len(scores2) < 2:
-            return 1.0
-        return scipy.stats.ttest_ind(scores1, scores2, equal_var=False).pvalue
 
     def next_match(self) -> list[str]:
         """
@@ -194,19 +188,22 @@ class SamplerCloseCluster(Sampler):
         max pvalue (highest uncertainty) based on current skill evidence.
         """
         models_sorted = sorted(self.models, key=self.model_skill)
-        best_tuple = None
-        max_pval = 0
+        candidate_tuples = []
         for i in range(len(models_sorted) - self.K + 1):
             candidate_tuple = tuple(models_sorted[i:i + self.K])
             pval = sum(
-                self.pval(a, b)
+                utils.pval(self.scores[a], self.scores[b])
                 for a, b in zip(candidate_tuple, candidate_tuple[1:])
             )
-            if pval > max_pval:
-                max_pval = pval
-                best_tuple = candidate_tuple
+            if pval > 0.05 * (self.K - 1):
+                candidate_tuples.append(candidate_tuple)
 
-        return list(best_tuple)
+        if candidate_tuples:
+            return random.choice(candidate_tuples)
+        else:
+            print("Warning: No candidate tuples with p-value > 0.05 found.")
+            # randomly select a tuple
+            return list(itertools.combinations(models_sorted, self.K))
     
     def record_match(self, result: Result):
         for model, score in result.items():
