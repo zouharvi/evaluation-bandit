@@ -166,3 +166,52 @@ class SamplerCloseUniform(Sampler):
 
     def model_skill(self, model: str) -> float:
         return statistics.mean(self.scores[model]) if self.scores[model] else 0
+    
+
+import scipy.stats
+
+class SamplerCloseCluster(Sampler):
+    """
+    Randomly select a match that's balanced between all models, but
+    prioritizes matches between models with similar skill.
+    Results from K-way evaluation are interpreted as unbiased scores.
+    """
+
+    def __init__(self, models: list[str], K: int = 2):
+        super().__init__(models, K)
+        self.scores = {model: [] for model in models}
+
+    def pval(self, model1, model2) -> float:
+        scores1 = self.scores[model1]
+        scores2 = self.scores[model2]
+        if len(scores1) < 2 or len(scores2) < 2:
+            return 1.0
+        return scipy.stats.ttest_ind(scores1, scores2, equal_var=False).pvalue
+
+    def next_match(self) -> list[str]:
+        """
+        Scan through all K-tuples in sorted models and select the K-tuple with
+        max pvalue (highest uncertainty) based on current skill evidence.
+        """
+        models_sorted = sorted(self.models, key=self.model_skill)
+        best_tuple = None
+        max_pval = 0
+        for i in range(len(models_sorted) - self.K + 1):
+            candidate_tuple = tuple(models_sorted[i:i + self.K])
+            pval = sum(
+                self.pval(a, b)
+                for a, b in zip(candidate_tuple, candidate_tuple[1:])
+            )
+            if pval > max_pval:
+                max_pval = pval
+                best_tuple = candidate_tuple
+
+        return list(best_tuple)
+    
+    def record_match(self, result: Result):
+        for model, score in result.items():
+            self.scores[model].append(score)
+
+
+    def model_skill(self, model: str) -> float:
+        return statistics.mean(self.scores[model]) if self.scores[model] else 0

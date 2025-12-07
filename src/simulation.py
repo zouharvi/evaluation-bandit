@@ -24,7 +24,7 @@ def annotate_random(data, models) -> tuple[float, Result]:
         noise = random.uniform(-3, 3)
 
     # TODO: use de-noiser since the linear shift is inversible
-    noise_linear = 1.1
+    noise_linear = 1.05
     results_mean = statistics.mean(results)
     results = {
         model: max(0, min(100, (result - results_mean) * noise_linear + results_mean + noise))
@@ -50,7 +50,7 @@ def simulate(data, sampler: sampler.Sampler) -> list[tuple[float, float]]:
     costs_all = []
     correlations_all = []
 
-    for _ in range(5):
+    for _ in range(2):
         costs = []
         correlations = []
 
