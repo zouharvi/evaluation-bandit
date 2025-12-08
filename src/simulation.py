@@ -14,8 +14,8 @@ def annotate_random(data, models) -> tuple[float, Result]:
 
     K = len(models)
 
-    # base cost + per additional model
-    cost = 1 + 0.5 * (K - 1)
+    # base cost + decay per additional model
+    cost = 1 + (K - 1)**0.8
 
     if K == 1:
         noise = random.uniform(-15, 15)
