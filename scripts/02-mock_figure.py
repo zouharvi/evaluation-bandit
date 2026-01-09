@@ -94,9 +94,10 @@ plt.show()
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+import statistics
 
 plt.rcParams["font.family"] = "serif"
-plt.figure(figsize=(4, 2.5))
+plt.figure(figsize=(4, 2))
 
 MODELS = {
     "A": 75,
@@ -129,7 +130,7 @@ for model in MODELS.keys():
 
 
 # simulare epsilon-greedy
-for i in range(5, 100):
+for i in range(5, 200):
     if random.random() > EPSILON:
         # sort models by performance
         models = sorted(list(MODELS.keys()), key=lambda m: np.mean(data[m]), reverse=True)[:3]
