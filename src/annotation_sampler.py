@@ -3,7 +3,7 @@ import random
 import statistics
 import numpy as np
 import itertools
-from dynamic_evaluation import utils
+from bandit_rank import utils
 
 Result = dict[str, float]
 

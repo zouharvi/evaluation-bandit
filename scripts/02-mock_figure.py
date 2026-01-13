@@ -32,6 +32,7 @@ COLORS = [
 MODEL_COLOR = {model: COLORS[i] for i, model in enumerate(data.keys())}
 
 import matplotlib.pyplot as plt
+import bandit_rank.utils_fig
 import statistics
 import numpy as np
 
@@ -47,7 +48,6 @@ for model, values in data.items():
 data = data_new
 
 
-plt.rcParams["font.family"] = "serif"
 plt.figure(figsize=(4, 2.5))
 
 for model, model_values in data.items():
@@ -93,10 +93,10 @@ plt.show()
 
 import random
 import matplotlib.pyplot as plt
+import bandit_rank.utils_fig
 import numpy as np
 import statistics
 
-plt.rcParams["font.family"] = "serif"
 plt.figure(figsize=(4, 2))
 
 MODELS = {

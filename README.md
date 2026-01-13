@@ -1,4 +1,4 @@
-# Dynamic Contrastive Evaluation with Humans
+# Bandit-Rank: Dynamic Contrastive Evaluation with Humans
 
 > **Abstract:** TODO:
 
@@ -12,4 +12,6 @@ The code in `src/` is implementation of various algorithms and utility functions
 
 ```bash
 python3 ./scripts/01-pilot_simulation.py
+python3 ./scripts/02-mock_figure.py
+python3 ./scripts/03-dynamic_simulation.py
 ```

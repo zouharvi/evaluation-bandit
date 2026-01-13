@@ -1,13 +1,13 @@
-from dynamic_evaluation import annotation_simulation, sampler
+from bandit_rank import annotation_simulation, annotation_sampler
 import matplotlib.pyplot as plt
 import subset2evaluate.utils
 
 data = subset2evaluate.utils.load_data_wmt("wmt25", "en-cs_CZ", normalize=False)
 models = list(data[0]["scores"].keys())
-results_k1 = annotation_simulation.simulate(data, lambda: sampler.SamplerCloseUniform(models, K=1))
-results_uniform_k2 = annotation_simulation.simulate(data, lambda: sampler.SamplerCloseUniform(models, K=2))
-results_uniform_k4 = annotation_simulation.simulate(data, lambda: sampler.SamplerCloseUniform(models, K=4))
-results_cluster_k4 = annotation_simulation.simulate(data, lambda: sampler.SamplerCloseCluster(models, K=4))
+results_k1 = annotation_simulation.simulate(data, lambda: annotation_sampler.SamplerCloseUniform(models, K=1))
+results_uniform_k2 = annotation_simulation.simulate(data, lambda: annotation_sampler.SamplerCloseUniform(models, K=2))
+results_uniform_k4 = annotation_simulation.simulate(data, lambda: annotation_sampler.SamplerCloseUniform(models, K=4))
+results_cluster_k4 = annotation_simulation.simulate(data, lambda: annotation_sampler.SamplerCloseCluster(models, K=4))
 
 
 fig, axs = plt.subplots(1, 2, figsize=(7, 3), sharex=True)

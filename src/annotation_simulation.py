@@ -1,5 +1,5 @@
 import statistics
-from dynamic_evaluation import sampler, utils
+from bandit_rank import sampler, utils
 import random
 import multiprocessing
 Result = dict[str, float]
@@ -34,24 +34,6 @@ def annotate_random(data, models) -> tuple[float, Result]:
     }
     return cost, results
 
-def model_clusters(model_ranking) -> float:
-    clusters = 1
-    # sort
-    models = sorted(
-        model_ranking.keys(),
-        key=lambda m: statistics.mean(model_ranking[m]) if model_ranking[m] else 0
-    )
-    for model1, model2 in zip(models, models[1:]):
-        if (
-            utils.pval(
-                model_ranking[model1],
-                model_ranking[model2],
-            )
-            < 0.05
-        ):
-            clusters += 1
-
-    return clusters
 
 
 def _simulate(args: tuple[list[dict], sampler.Sampler]) -> tuple[list[float], list[float], list[float]]:
@@ -77,7 +59,7 @@ def _simulate(args: tuple[list[dict], sampler.Sampler]) -> tuple[list[float], li
             model: sampler.model_skill(model) for model in sampler.models
         }
         output_clu.append(
-            model_clusters(
+            utils.model_clusters(
                 {model: sampler.scores[model] for model in sampler.models}
             )
         )
