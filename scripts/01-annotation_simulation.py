@@ -1,4 +1,4 @@
-from bandit_rank import annotation_simulation, annotation_sampler
+from translation_tournament import annotation_simulation, annotation_sampler
 import matplotlib.pyplot as plt
 import subset2evaluate.utils
 

@@ -1,4 +1,4 @@
-# Bandit-Rank: Dynamic Contrastive Evaluation with Humans
+# Translation Tournament: Dynamic Contrastive Evaluation with Humans
 
 > **Abstract:** TODO:
 

@@ -32,7 +32,7 @@ COLORS = [
 MODEL_COLOR = {model: COLORS[i] for i, model in enumerate(data.keys())}
 
 import matplotlib.pyplot as plt
-import bandit_rank.utils_fig
+import translation_tournament.utils_fig
 import statistics
 import numpy as np
 
@@ -93,7 +93,7 @@ plt.show()
 
 import random
 import matplotlib.pyplot as plt
-import bandit_rank.utils_fig
+import translation_tournament.utils_fig
 import numpy as np
 import statistics
 

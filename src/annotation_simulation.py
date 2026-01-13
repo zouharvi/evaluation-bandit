@@ -1,5 +1,5 @@
 import statistics
-from bandit_rank import sampler, utils
+from translation_tournament import sampler, utils
 import random
 import multiprocessing
 Result = dict[str, float]

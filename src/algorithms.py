@@ -63,19 +63,20 @@ def successive_rejects(data, budget, phases: Literal["constant", "flexible"] = "
     }
 
 
-def epsilon_greedy(data, budget, topk=3, epsilon=0.5):
+def epsilon_greedy(data, budget, topk=3, epsilon=0.5, coldstart=3):
     model_index = {model: 0 for  model in data[0]["scores"]}
     model_scores = {model: [] for model in data[0]["scores"]}
     models = list(data[0]["scores"])
     cost = 0
-    # initial phase
-    for _ in range(3):
+    # cold start phase
+    for _ in range(coldstart):
         for model in models:
             item = data[model_index[model]]
             model_scores[model].append(item["scores"][model])
             model_index[model] += 1
             cost += 1
 
+    # active learning phase
     while cost < budget:
         if random.random() < epsilon:
             # explore: select model with least evaluations

@@ -1,6 +1,6 @@
 # %%
 
-from bandit_rank import algorithms, utils
+from translation_tournament import algorithms, utils
 import importlib
 importlib.reload(algorithms)
 importlib.reload(utils)
@@ -10,7 +10,7 @@ import numpy as np
 
 data = utils.load_data_single()
 for item in data:
-    for i in range(2):
+    for i in range(3):
         item["scores"] |= {
             model+"*"*i: score + np.random.normal(0, 0.0001)
             for model, score in item["scores"].items()
