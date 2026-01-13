@@ -2,6 +2,7 @@
 
 from translation_tournament import algorithms, utils
 import importlib
+
 importlib.reload(algorithms)
 importlib.reload(utils)
 import numpy as np
@@ -10,37 +11,83 @@ import numpy as np
 
 data = utils.load_data_single()
 for item in data:
-    for i in range(3):
+    for i in range(0):
         item["scores"] |= {
-            model+"*"*i: score + np.random.normal(0, 0.0001)
+            model + "*" * i: score + np.random.normal(0, 0.0001)
             for model, score in item["scores"].items()
         }
 
-ranking_true = utils.items_to_model_scores(data, average=True)
-budgets = lambda: np.linspace(200, int(len(data)*len(data[0]["scores"])*0.5), 5, dtype=int)
+model_scores_true = {
+    model: [item["scores"][model] for item in data] for model in data[0]["scores"]
+}
+budgets = lambda: np.linspace(
+    200, int(len(data) * len(data[0]["scores"]) * 0.5), 5, dtype=int
+)
 
 for budget in budgets():
-    ranking = algorithms.baseline(data, budget)
+    model_scores = algorithms.baseline(data, budget)
     print(
         f"Budget: {budget:>4}",
-        f"Tau:  {utils.tau(ranking, ranking_true):.3f} ",
-        f"wTau: {utils.wtau(ranking, ranking_true):.3f}",
+        f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
+        f"wTau: {utils.wtau(model_scores, model_scores_true):.3f}",
+        f"clup: {utils.clusters_p(model_scores):.3f}",
     )
 
 print()
 for budget in budgets():
-    ranking = algorithms.successive_rejects(data, budget, phases="constant")
+    model_scores = algorithms.successive_rejects(data, budget, phases="constant")
     print(
         f"Budget: {budget:>4}",
-        f"Tau:  {utils.tau(ranking, ranking_true):.3f} ",
-        f"wTau: {utils.wtau(ranking, ranking_true):.3f}",
+        f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
+        f"wTau: {utils.wtau(model_scores, model_scores_true):.3f}",
+        f"clup: {utils.clusters_p(model_scores):.3f}",
     )
 
 print()
 for budget in budgets():
-    ranking = algorithms.epsilon_greedy(data, budget, topk=3, epsilon=0.5)
+    model_scores = algorithms.successive_rejects(data, budget, phases="prioritize_all")
     print(
         f"Budget: {budget:>4}",
-        f"Tau:  {utils.tau(ranking, ranking_true):.3f} ",
-        f"wTau: {utils.wtau(ranking, ranking_true):.3f}",
+        f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
+        f"wTau: {utils.wtau(model_scores, model_scores_true):.3f}",
+        f"clup: {utils.clusters_p(model_scores):.3f}",
+    )
+
+print()
+for budget in budgets():
+    model_scores = algorithms.epsilon_greedy(data, budget)
+    print(
+        f"Budget: {budget:>4}",
+        f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
+        f"wTau: {utils.wtau(model_scores, model_scores_true):.3f}",
+        f"clup: {utils.clusters_p(model_scores):.3f}",
+    )
+
+print()
+for budget in budgets():
+    model_scores = algorithms.epsilon_greedy(
+        data,
+        budget,
+        epsilon=lambda rank, total: (1 if rank < 3 else 0.5 if rank < 5 else 0.1),
+        # epsilon=lambda rank, total: 1/(rank + 1),
+    )
+    print(
+        f"Budget: {budget:>4}",
+        f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
+        f"wTau: {utils.wtau(model_scores, model_scores_true):.3f}",
+        f"clup: {utils.clusters_p(model_scores):.3f}",
+    )
+
+print()
+for budget in budgets():
+    model_scores = algorithms.confidence_ambiguity_rank(
+        data,
+        budget,
+        weight_ci_p=(0, 1),
+    )
+    print(
+        f"Budget: {budget:>4}",
+        f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
+        f"wTau: {utils.wtau(model_scores, model_scores_true):.3f}",
+        f"clup: {utils.clusters_p(model_scores):.3f}",
     )

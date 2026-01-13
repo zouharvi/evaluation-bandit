@@ -1,3 +1,4 @@
+import numpy as np
 import scipy.stats
 import statistics
 import collections
@@ -11,49 +12,66 @@ warnings.filterwarnings(
 def pval(scores1, scores2) -> float:
     if len(scores1) < 2 or len(scores2) < 2:
         return 1.0
-    return scipy.stats.ttest_ind(
-        scores1,
-        scores2,
-        equal_var=False,
-        alternative="less",
+    return scipy.stats.ttest_rel(
+        scores1 + [np.nan] * (len(scores2) - len(scores1)),
+        scores2 + [np.nan] * (len(scores1) - len(scores2)),
+        nan_policy="omit",
     ).pvalue
 
 
-def tau(model_ranking1, model_ranking2) -> float:
+def tau(model_scores1, model_scores2) -> float:
     return scipy.stats.kendalltau(
-        [model_ranking1[model] for model in model_ranking1],
-        [model_ranking2[model] for model in model_ranking1],
+        [statistics.mean(model_scores1[model]) for model in model_scores1],
+        [statistics.mean(model_scores2[model]) for model in model_scores1],
         variant="b",
     )[0]
 
 
-def wtau(model_ranking1, model_ranking2) -> float:
+def wtau(model_scores1, model_scores2) -> float:
     """
     weighted tau correlation. Prioritizes correct rankings for top models
     """
     return scipy.stats.weightedtau(
-        [model_ranking1[model] for model in model_ranking1],
-        [model_ranking2[model] for model in model_ranking1],
-        # weigher=lambda x: (
-        #     1 if x < 3
-        #     else 0.5 if x < 5
-        #     else 0.1
-        # )
+        [statistics.mean(model_scores1[model]) for model in model_scores1],
+        [statistics.mean(model_scores2[model]) for model in model_scores1],
+        weigher=lambda rank: (
+            1 if rank < 3
+            else 0.5 if rank < 5
+            else 0.1
+        )
     )[0]
 
 
-def model_clusters(model_ranking) -> float:
+def clusters_p(model_scores) -> float:
+    p_values = []
+    # sort
+    models = sorted(
+        model_scores.keys(),
+        key=lambda m: statistics.mean(model_scores[m]),
+    )
+    for model1, model2 in zip(models, models[1:]):
+        p_values.append(
+            pval(
+                model_scores[model1],
+                model_scores[model2],
+            )
+        )
+
+    return statistics.mean(p_values)
+
+
+def model_clusters(model_scores) -> float:
     clusters = 1
     # sort
     models = sorted(
-        model_ranking.keys(),
-        key=lambda m: statistics.mean(model_ranking[m]) if model_ranking[m] else 0,
+        model_scores.keys(),
+        key=lambda m: statistics.mean(model_scores[m]),
     )
     for model1, model2 in zip(models, models[1:]):
         if (
             pval(
-                model_ranking[model1],
-                model_ranking[model2],
+                model_scores[model1],
+                model_scores[model2],
             )
             < 0.05
         ):
@@ -110,5 +128,12 @@ def load_data():
     return data
 
 
-def load_data_single(langs="en-ko_KR"):
+def load_data_single(langs="en-cs_CZ"):
     return load_data()[langs]
+
+
+def confidence_interval(scores, confidence=0.95):
+    mean = statistics.mean(scores)
+    sem = scipy.stats.sem(scores)
+    margin = sem * scipy.stats.t.ppf((1 + confidence) / 2.0, len(scores) - 1)
+    return (mean - margin, mean + margin)

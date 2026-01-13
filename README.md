@@ -1,4 +1,4 @@
-# Translation Tournament: Dynamic Contrastive Evaluation with Humans
+# Translation Tournament
 
 > **Abstract:** TODO:
 
