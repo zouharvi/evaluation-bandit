@@ -2,28 +2,23 @@ import math
 import random
 from typing import Callable, Literal
 
-import numpy as np
-import scipy.stats
 from . import utils
 
-def baseline(data, budget):
+def baseline(data, budget) -> utils.ModelScores:
     items = random.sample(
         data,
         k=budget//len(data[0]["scores"])
     )
-    # pprint.pprint(
-    #     sorted(utils.items_to_model_scores(items, average=True).items(), key=lambda x: x[1], reverse=True
-    # ))
 
     return utils.items_to_model_scores(items, average=False)
 
 
 def successive_rejects(
-        data,
-        budget,
-        phases: Literal["constant", "prioritize_all", "prioritize_elite"] = "constant",
-        ranking_from_elimination=False,
-    ):
+    data,
+    budget,
+    phases: Literal["constant", "prioritize_all", "prioritize_top"] = "constant",
+    ranking_from_elimination=False,
+) -> utils.ModelScores:
     # shallow copy
     data = list(data)
     models = list(data[0]["scores"])
@@ -33,7 +28,7 @@ def successive_rejects(
             for i in range(len(models)-1)
         ]
         phases[0] = max(phases[0], 1)
-    elif phases == "prioritize_elite":
+    elif phases == "prioritize_top":
         phases = [
             round(budget / (len(models)**2 - 2 * len(models) - i * len(models) + 2 * i))
             for i in range(len(models)-1)
@@ -95,9 +90,9 @@ def successive_rejects(
 def epsilon_greedy(
     data,
     budget,
-    epsilon: Callable[[int, int], float]=lambda rank, total: 10 if rank < 3 else 1,
+    epsilon: Callable[[int, int], float]=lambda rank, total: 1 if rank < 3 else 0.1,
     coldstart=3
-):
+) -> utils.ModelScores:
     """
         Rank-based epsilon-greedy approach
     """
@@ -147,10 +142,10 @@ def epsilon_greedy(
 
 def confidence_ambiguity_rank(
     data,
-    budget,
+    budgets: list[int],
     coldstart=3,
     weight_ci_p=(1, 1),
-):
+) -> list[utils.ModelScores]:
     models = [
         {
             "model": model,
@@ -200,7 +195,8 @@ def confidence_ambiguity_rank(
 
     weight_ci, weight_p = weight_ci_p
 
-    while cost < budget:
+    output = []
+    while len(budgets) > 0:
         recompute_meta()
         # rank models based on ci and neighbour p-value independently
         # then average the rank
@@ -226,18 +222,16 @@ def confidence_ambiguity_rank(
             [m for m in models if m["index"] < len(data)],
             key=lambda m: weight_ci * model_rank_ci[m["model"]] + weight_p * model_rank_p[m["model"]],
         )
-        # print("Selecting", model["model"])
-        # print("CI rank", model_rank_ci)
-        # print("CIs", {model["model"]: model["ci"] for model in models})
-        # print()
-        # print(model, model_rank_ci[model["model"]], model_rank_p[model["model"]])
         item = data[model["index"]]
         model["scores"].append(item["scores"][model["model"]])
         model["index"] += 1
         cost += 1
 
-    recompute_meta()
-    return {
-        model["model"]: model["scores"]
-        for model in models
-    }
+        if cost >= budgets[0]:
+            budgets = budgets[1:]
+            output.append({
+                model["model"]: list(model["scores"])
+                for model in models
+            })
+
+    return output

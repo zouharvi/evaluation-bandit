@@ -4,12 +4,14 @@ import statistics
 import collections
 import warnings
 
+ModelScores = dict[str, list[float]]
+
 warnings.filterwarnings(
     "ignore", category=RuntimeWarning, message="Precision loss occurred"
 )
 
 
-def pval(scores1, scores2) -> float:
+def pval(scores1: ModelScores, scores2: ModelScores) -> float:
     if len(scores1) < 2 or len(scores2) < 2:
         return 1.0
     return scipy.stats.ttest_rel(
@@ -19,7 +21,7 @@ def pval(scores1, scores2) -> float:
     ).pvalue
 
 
-def tau(model_scores1, model_scores2) -> float:
+def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     return scipy.stats.kendalltau(
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
@@ -27,7 +29,7 @@ def tau(model_scores1, model_scores2) -> float:
     )[0]
 
 
-def wtau(model_scores1, model_scores2) -> float:
+def wtau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     """
     weighted tau correlation. Prioritizes correct rankings for top models
     """
@@ -35,14 +37,14 @@ def wtau(model_scores1, model_scores2) -> float:
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         weigher=lambda rank: (
-            1 if rank < 3
-            else 0.5 if rank < 5
-            else 0.1
+            1 if rank <= 2
+            else 0.5 if rank <= 5
+            else 0.001
         )
     )[0]
 
 
-def clusters_p(model_scores) -> float:
+def clusters_p(model_scores: ModelScores) -> float:
     p_values = []
     # sort
     models = sorted(
@@ -60,7 +62,7 @@ def clusters_p(model_scores) -> float:
     return statistics.mean(p_values)
 
 
-def model_clusters(model_scores) -> float:
+def model_clusters(model_scores: ModelScores) -> float:
     clusters = 1
     # sort
     models = sorted(
@@ -80,7 +82,7 @@ def model_clusters(model_scores) -> float:
     return clusters
 
 
-def items_to_model_scores(data, average=False):
+def items_to_model_scores(data: list[dict], average=False) -> ModelScores:
     model_ranking = collections.defaultdict(list)
     for item in data:
         for model, score in item["scores"].items():
@@ -93,7 +95,7 @@ def items_to_model_scores(data, average=False):
         return model_ranking
 
 
-def items_to_model_ranking(data):
+def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
     model_scores = items_to_model_scores(data, average=True)
     return {
         model: rank
@@ -106,7 +108,7 @@ def items_to_model_ranking(data):
         )
     }
 
-def load_data():
+def load_data() -> dict[str, list[dict]]:
     import subset2evaluate.utils
 
     data = subset2evaluate.utils.load_data_wmt_all(normalize=False)
@@ -128,11 +130,11 @@ def load_data():
     return data
 
 
-def load_data_single(langs="en-cs_CZ"):
+def load_data_single(langs="en-cs_CZ") -> list[dict]:
     return load_data()[langs]
 
 
-def confidence_interval(scores, confidence=0.95):
+def confidence_interval(scores: list[float], confidence=0.95) -> tuple[float, float]:
     mean = statistics.mean(scores)
     sem = scipy.stats.sem(scores)
     margin = sem * scipy.stats.t.ppf((1 + confidence) / 2.0, len(scores) - 1)
