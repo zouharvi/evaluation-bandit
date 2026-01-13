@@ -1,7 +1,9 @@
-# HUBATO
-Dynamic Uncertainty Kway Evaluation
+# Dynamic Contrastive Evaluation with Humans
 
-Work-in-progress project
+> **Abstract:** TODO:
+
+This repository contains experiments and analyses.
+If you are interested in the annotation interface for dynamic evaluation, please see [Pearmut](https://github.com/zouharvi/pearmut).
 
 ## Experiments
 

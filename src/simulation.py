@@ -1,5 +1,5 @@
 import statistics
-from DUKE import sampler, utils
+from dynamic_evaluation import sampler, utils
 import random
 import multiprocessing
 Result = dict[str, float]

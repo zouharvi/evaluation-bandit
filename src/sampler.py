@@ -3,7 +3,7 @@ import random
 import statistics
 import numpy as np
 import itertools
-from DUKE import utils
+from dynamic_evaluation import utils
 
 Result = dict[str, float]
 
