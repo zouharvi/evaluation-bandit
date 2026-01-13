@@ -20,10 +20,10 @@ outputs_epsilon_greedy_top5 = simulation.simulate(
 outputs_epsilon_greedy_smooth = simulation.simulate(
     fn=lambda data, budget: algorithms.epsilon_greedy(data, budget, epsilon=lambda rank, total: 1/(rank + 1))
 )
-outputs_confidence_ambiguity_rank_11 = simulation.simulate(
-    fn=lambda data, budgets: algorithms.confidence_ambiguity_rank(data, budgets=budgets, weight_ci_p=(1, 1)),
-    accepts_budgets=True,
-)
+# outputs_confidence_ambiguity_rank_11 = simulation.simulate(
+#     fn=lambda data, budgets: algorithms.confidence_ambiguity_rank(data, budgets=budgets, weight_ci_p=(1, 1)),
+#     accepts_budgets=True,
+# )
 # outputs_confidence_ambiguity_rank_10 = simulation.simulate(
 #     fn=lambda data, budgets: algorithms.confidence_ambiguity_rank(data, budgets=budgets, weight_ci_p=(1, 0)),
 #     accepts_budgets=True,
@@ -79,7 +79,7 @@ plot_output(outputs_successive_rejects_prioritize_all, "Successive Rejects (prio
 plot_output(outputs_successive_rejects_prioritize_top, "Successive Rejects (prioritize top)", axs)
 plot_output(outputs_epsilon_greedy_top5, "Epsilon-Greedy (top 5)", axs)
 plot_output(outputs_epsilon_greedy_smooth, "Epsilon-Greedy (smooth)", axs)
-plot_output(outputs_confidence_ambiguity_rank_11, "Conf-Amb Rank (1,1)", axs)
+# plot_output(outputs_confidence_ambiguity_rank_11, "Conf-Amb Rank (1,1)", axs)
 # plot_output(outputs_confidence_ambiguity_rank_10, "Conf-Amb Rank (1,0)", axs)
 # plot_output(outputs_confidence_ambiguity_rank_01, "Conf-Amb Rank (0,1)", axs)
 

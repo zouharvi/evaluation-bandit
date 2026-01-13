@@ -21,6 +21,7 @@ def successive_rejects(
 ) -> utils.ModelScores:
     # shallow copy
     data = list(data)
+    random.shuffle(data)
     models = list(data[0]["scores"])
     if phases == "constant":
         phases = [
@@ -96,6 +97,8 @@ def epsilon_greedy(
     """
         Rank-based epsilon-greedy approach
     """
+    data = list(data)
+    random.shuffle(data)
     model_index = {model: 0 for  model in data[0]["scores"]}
     model_scores = {model: [] for model in data[0]["scores"]}
     models = list(data[0]["scores"])
@@ -146,6 +149,8 @@ def confidence_ambiguity_rank(
     coldstart=3,
     weight_ci_p=(1, 1),
 ) -> list[utils.ModelScores]:
+    data = list(data)
+    random.shuffle(data)
     models = [
         {
             "model": model,

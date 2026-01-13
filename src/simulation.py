@@ -7,8 +7,8 @@ def simulate(
 ):
     output = []
     for data_name, data in utils.load_data().items():
-        if data_name != "en-ko_KR":
-            continue
+        # if data_name != "en-ko_KR":
+        #     continue
         budgets = budgets = lambda: np.linspace(
             200, int(len(data) * len(data[0]["scores"]) * 0.5), 10, dtype=int
         )

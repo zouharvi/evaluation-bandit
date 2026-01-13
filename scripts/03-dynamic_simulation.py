@@ -9,7 +9,7 @@ import numpy as np
 
 # ['cs-de_DE', 'cs-uk_UA', 'en-ar_EG', 'en-bho_IN', 'en-cs_CZ', 'en-et_EE', 'en-is_IS', 'en-it_IT', 'en-ja_JP', 'en-ko_KR', 'en-mas_KE', 'en-ru_RU', 'en-sr_Cyrl_RS', 'en-uk_UA', 'en-zh_CN', 'ja-zh_CN'])
 
-data = utils.load_data_single(langs="en-ko_KR")
+data = utils.load_data_single(langs="en-cs_CZ")
 for item in data:
     for i in range(0):
         item["scores"] |= {
