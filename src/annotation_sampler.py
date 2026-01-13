@@ -25,60 +25,6 @@ class Sampler(abc.ABC):
         pass
 
 
-class SamplerTrueSkill(Sampler):
-    def __init__(self, models: list[str], K: int = 2):
-        super().__init__(models, K)
-        # TODO
-        raise NotImplementedError()
-
-    def model_skill(self, model: str) -> float:
-        raise NotImplementedError()
-
-    def next_match(self) -> list[str]:
-        raise NotImplementedError()
-
-    def record_match(self, result: Result):
-        raise NotImplementedError()
-
-
-class SamplerOnlineELO(Sampler):
-    # TODO: 
-    def __init__(self, models: list[str], K: int = 2):
-        super().__init__(models, K)
-        self.scores = {model: [] for model in models}
-
-    def model_skill(self, model: str) -> float:
-        out = 1000
-        for opponent, result in self.scores[model]:
-            out += opponent + result
-        return out/len(self.scores[model]) if self.scores[model] else out
-
-    def next_match(self, model1: str, model2: str):
-        raise NotImplementedError()
-
-    def record_match(self, model1: str, model2: str, result: Result):
-        assert result >= 0 and result <= 1
-        self.scores[model1].append((self.model_skill(model2), 1600*result - 800))
-        self.scores[model2].append(
-            (self.model_skill(model1), 1600*(1-result) - 800))
-
-
-class SamplerBatchELO(Sampler):
-    # TODO
-    def __init__(self, models: list[str], K: int = 2):
-        super().__init__(models, K)
-        raise NotImplementedError()
-
-    def model_skill(self, model: str) -> float:
-        raise NotImplementedError()
-
-    def next_match(self) -> list[str]:
-        raise NotImplementedError()
-
-    def record_match(self, result: Result):
-        raise NotImplementedError()
-
-
 class SamplerRandom(Sampler):
     """
     Fully randomly select a match.

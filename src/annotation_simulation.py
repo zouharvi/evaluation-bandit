@@ -34,15 +34,6 @@ def annotate_random(data, models) -> tuple[float, Result]:
     }
     return cost, results
 
-
-def model_correlation(model_ranking1, model_ranking2) -> float:
-    return statistics.correlation(
-        [model_ranking1[model] for model in model_ranking1],
-        [model_ranking2[model] for model in model_ranking1],
-        method="ranked",
-    )
-
-
 def model_clusters(model_ranking) -> float:
     clusters = 1
     # sort
@@ -91,7 +82,7 @@ def _simulate(args: tuple[list[dict], sampler.Sampler]) -> tuple[list[float], li
             )
         )
         output_cor.append(
-            model_correlation(model_ranking_true, model_ranking)
+            utils.model_correlation(model_ranking_true, model_ranking)
         )
 
 

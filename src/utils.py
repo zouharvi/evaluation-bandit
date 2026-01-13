@@ -12,4 +12,17 @@ def pval(scores1, scores2) -> float:
     ).pvalue
 
 
-# import matplotlib.pyplot as plt
+def model_correlation(model_ranking1, model_ranking2) -> float:
+    return scipy.stats.kendalltau(
+        [model_ranking1[model] for model in model_ranking1],
+        [model_ranking2[model] for model in model_ranking1],
+        variant="b",
+    )
+
+def model_correlation_weighted(model_ranking1, model_ranking2, weights) -> float:
+    return scipy.stats.weightedtau(
+        [model_ranking1[model] for model in model_ranking1],
+        [model_ranking2[model] for model in model_ranking1],
+        weights=[weights[model] for model in model_ranking1],
+        variant="b",
+    )
