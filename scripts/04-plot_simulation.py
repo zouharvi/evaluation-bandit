@@ -6,13 +6,13 @@ outputs_baseline = simulation.simulate(
     fn=algorithms.baseline
 )
 outputs_successive_rejects_constant = simulation.simulate(
-    fn=lambda data, budget: algorithms.successive_rejects(data, budget, phases="constant")
+    fn=lambda data, budget: algorithms.successive_rejects(data, budget, _phases="constant")
 )
 outputs_successive_rejects_prioritize_all = simulation.simulate(
-    fn=lambda data, budget: algorithms.successive_rejects(data, budget, phases="prioritize_all")
+    fn=lambda data, budget: algorithms.successive_rejects(data, budget, _phases="prioritize_all")
 )
 outputs_successive_rejects_prioritize_top = simulation.simulate(
-    fn=lambda data, budget: algorithms.successive_rejects(data, budget, phases="prioritize_top")
+    fn=lambda data, budget: algorithms.successive_rejects(data, budget, _phases="prioritize_top")
 )
 outputs_epsilon_greedy_top5 = simulation.simulate(
     fn=lambda data, budget: algorithms.epsilon_greedy(data, budget, epsilon=lambda rank, total: 1 if rank <=5 else 0.1)

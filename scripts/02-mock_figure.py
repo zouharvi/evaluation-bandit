@@ -21,17 +21,21 @@ data = {
     ],
 }
 
-COLORS = [
-    "#020",
-    "#242",
-    "#464",
-    "#686",
-    "#8A8",
-    "#ACA",
-]
-MODEL_COLOR = {model: COLORS[i] for i, model in enumerate(data.keys())}
+def get_color(white: float):
+    """
+    Mixes #020 with white in [0, 1]
+    0 -> #020
+    1 -> #DFD
+    """
+    r1, g1, b1 = 2, 20, 2
+    r2, g2, b2 = 223, 253, 223
+    r = int(r1 * (1 - white) + r2 * white)
+    g = int(g1 * (1 - white) + g2 * white)
+    b = int(b1 * (1 - white) + b2 * white)
+    return f"#{r:02X}{g:02X}{b:02X}"
 
 import matplotlib.pyplot as plt
+import translation_bandit
 import translation_bandit.utils_fig
 import statistics
 import numpy as np
@@ -50,26 +54,28 @@ data = data_new
 
 plt.figure(figsize=(4, 2.5))
 
-for model, model_values in data.items():
-    plt.plot(
-        [
-            statistics.mean(model_values[: i + 1])
-            for i, v in enumerate(model_values)
-            if v >= 0
-        ],
-        marker=".",
-        color=MODEL_COLOR[model],
-        markersize=6,
-    )
+for model, model_values in data.items(): 
+    ys = [
+        statistics.mean(model_values[: i + 1])
+        for i, v in enumerate(model_values)
+        if v >= 0
+    ]
+    for i, (y0, y1) in enumerate(zip(ys[:-1], ys[1:])):
+        plt.plot(
+            [i, i + 1],
+            [y0, y1],
+            marker=".",
+            color=get_color(0.0 + 0.7 * (i / 40)),
+        )
+    
     if any(x < 0 for x in model_values):
-
         plt.plot(
             [len(model_values)-2, len(model_values) - 1],
             [statistics.mean([abs(x) for x in model_values[:-1]]),
              statistics.mean([abs(x) for x in model_values])
             ],
             marker=None,
-            color=MODEL_COLOR[model],
+            color=get_color(0.0 + 0.7 * ((len(model_values) -1) / 40)),
         )
 
         plt.scatter(
@@ -109,7 +115,7 @@ MODELS = {
 }
 
 ITEMS = np.random.normal(0, 15, 400).tolist()
-EPSILON = 0.4
+EPSILON = 0.5
 
 data = {
     model: [
@@ -118,59 +124,46 @@ data = {
     ] for model in MODELS.keys()
 }
 
-# TODO: 5 points at the beginning
-for model in MODELS.keys():
-    plt.plot(
-        list(range(5)),
-        [statistics.mean(data[model][:i+1]) for i in range(5)],
-        marker=".",
-        color=MODEL_COLOR[model],
-        markersize=7,
-    )
-
 
 # simulare epsilon-greedy
-for i in range(5, 200):
-    if random.random() > EPSILON:
-        # sort models by performance
-        models = sorted(list(MODELS.keys()), key=lambda m: np.mean(data[m]), reverse=True)[:3]
-    else:
-        models = list(MODELS.keys())
-
-    model = random.choice(models)
+for i in range(5, 150):
+    models = list(MODELS.keys())
+    models = [
+        model for model in models if len(data[model]) <= 40
+    ]
+    model = random.choices(
+        sorted(models, key=lambda m: np.mean(data[m]), reverse=True),
+        weights=[
+            1/(rank + 1)
+            for rank in range(len(models))
+        ],
+        k=1,
+    )[0]
     item = ITEMS[len(data[model])]
     performance = MODELS[model] + item + np.random.normal(0, 20)
     data[model].append(performance)
 
     # value continues from previous one
-    for _model in MODELS.keys():
-        if model == _model:
-            continue
-        last_value = statistics.mean(data[_model])
-        plt.plot(
-            [i-1, i],
-            [last_value, last_value],
-            color=MODEL_COLOR[_model],
-        )
+    x = len(data[model])
     plt.plot(
-        [i-1, i],
+        [x-1, x],
         [
             statistics.mean(data[model][:-1]),
             statistics.mean(data[model]),
         ],
-        color=MODEL_COLOR[model],
+        color=get_color(0.0 + 0.7 * (i / 150)),
     )
     plt.scatter(
-        [i],
+        [x],
         [statistics.mean(data[model])],
         marker=".",
-        color=MODEL_COLOR[model],
+        color=get_color(0.0 + 0.7 * (i / 150)),
         s=50,
     )
 
 
 plt.ylabel("Models", labelpad=-4)
-plt.xlabel("Annotation progression", labelpad=1)
+plt.xlabel("Annotation item", labelpad=1)
 plt.ylim(0, 100)
 plt.gca().spines[["top", "right"]].set_visible(False)
 plt.tight_layout(pad=0)

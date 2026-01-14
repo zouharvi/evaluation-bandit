@@ -35,7 +35,7 @@ for budget in budgets():
 
 print()
 for budget in budgets():
-    model_scores = algorithms.successive_rejects(data, budget, phases="constant")
+    model_scores = algorithms.successive_rejects(data, budget, _phases="constant")
     print(
         f"Budget: {budget:>4}",
         f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
@@ -45,7 +45,7 @@ for budget in budgets():
 
 print()
 for budget in budgets():
-    model_scores = algorithms.successive_rejects(data, budget, phases="prioritize_all")
+    model_scores = algorithms.successive_rejects(data, budget, _phases="prioritize_all")
     print(
         f"Budget: {budget:>4}",
         f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",

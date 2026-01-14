@@ -1,14 +1,12 @@
 import math
 import random
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
 from . import utils
 
+
 def baseline(data, budget) -> utils.ModelScores:
-    items = random.sample(
-        data,
-        k=budget//len(data[0]["scores"])
-    )
+    items = random.sample(data, k=budget // len(data[0]["scores"]))
 
     return utils.items_to_model_scores(items, average=False)
 
@@ -24,44 +22,50 @@ def successive_rejects(
     random.shuffle(data)
     models = list(data[0]["scores"])
     if phases == "constant":
-        phases = [
-            round(2 * budget / (len(models) ** 2 + len(models) -2))
-            for i in range(len(models)-1)
+        _phases: Any = [
+            round(2 * budget / (len(models) ** 2 + len(models) - 2))
+            for i in range(len(models) - 1)
         ]
-        phases[0] = max(phases[0], 1)
+        _phases[0] = max(_phases[0], 1)
     elif phases == "prioritize_top":
-        phases = [
-            round(budget / (len(models)**2 - 2 * len(models) - i * len(models) + 2 * i))
-            for i in range(len(models)-1)
+        _phases = [
+            round(
+                budget / (len(models) ** 2 - 2 * len(models) - i * len(models) + 2 * i)
+            )
+            for i in range(len(models) - 1)
         ]
-        phases[0] = max(phases[0], 1)
+        _phases[0] = max(_phases[0], 1)
     elif phases == "prioritize_all":
         # phases are longer at the beginning
         # use weighting with fixed first
-        phases = [1, 0.8, 0.6]
-        phases += [0.2]*len(phases)
+        _phases = [1, 0.8, 0.6]
+        _phases += [0.2] * len(_phases)
         # normalize to sum to budget
-        total = sum(phases)
+        total = sum(_phases)
         # TODO: missing number of models
-        phases = [math.ceil(budget * (p / total) / (len(models)-2)) for p in phases]
+        _phases = [math.ceil(budget * (p / total) / (len(models) - 2)) for p in _phases]
     else:
-        raise ValueError(f"Other (e.g. more dynamic) phase lengths not implemented yet.")
-    
-    expected_cost = sum([m*phase for m, phase in zip(range(len(models), 1, -1), phases)])
+        raise ValueError(
+            f"Other (e.g. more dynamic) phase lengths not implemented yet."
+        )
+
+    expected_cost = sum(
+        [m * phase for m, phase in zip(range(len(models), 1, -1), _phases)]
+    )
     if expected_cost > budget * 1.25 or expected_cost < budget * 0.75:
         print("Warning: budget too small/large for the selected phases.")
         print("Expected cost:", expected_cost, "Budget:", budget)
 
     # last phase always takes all remaining budget
-    phases[-1] = budget
-    
+    _phases[-1] = budget
+
     # last phase needs to have at least two models still
 
     cost = 0
 
     model_phase_elimintation = {}
     model_scores = {model: [] for model in models}
-    for phase, phase_size in enumerate(phases):
+    for phase, phase_size in enumerate(_phases):
         for _ in range(phase_size):
             if not data or cost >= budget:
                 break
@@ -76,30 +80,29 @@ def successive_rejects(
         )
         models.remove(model)
         model_phase_elimintation[model] = phase
+
+    # TODO: some of the last phases can be empty
     # add last model
-    model_phase_elimintation[models[0]] = phase + 1
+    model_phase_elimintation[models[0]] = phase + 1 # type: ignore
 
     if ranking_from_elimination:
         return model_phase_elimintation
     else:
-        return {
-            model: model_scores[model]
-            for model in model_scores
-        }
+        return {model: model_scores[model] for model in model_scores}
 
 
 def epsilon_greedy(
     data,
     budget,
-    epsilon: Callable[[int, int], float]=lambda rank, total: 1 if rank < 3 else 0.1,
-    coldstart=3
+    epsilon: Callable[[int, int], float] = lambda rank, total: 1 if rank < 3 else 0.1,
+    coldstart=3,
 ) -> utils.ModelScores:
     """
-        Rank-based epsilon-greedy approach
+    Rank-based epsilon-greedy approach
     """
     data = list(data)
     random.shuffle(data)
-    model_index = {model: 0 for  model in data[0]["scores"]}
+    model_index = {model: 0 for model in data[0]["scores"]}
     model_scores = {model: [] for model in data[0]["scores"]}
     models = list(data[0]["scores"])
     cost = 0
@@ -120,7 +123,8 @@ def epsilon_greedy(
                 epsilon(
                     rank,
                     len(models),
-                ) for rank in range(len(models))
+                )
+                for rank in range(len(models))
             ],
             k=1,
         )[0]
@@ -129,18 +133,10 @@ def epsilon_greedy(
         model_index[model] += 1
         cost += 1
 
-        models = [
-            model
-            for model, i in model_index.items()
-            if i < len(data)
-        ]
+        models = [model for model, i in model_index.items() if i < len(data)]
         models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
 
-    return {
-        model: model_scores[model]
-        for model in model_scores
-    }
-
+    return {model: model_scores[model] for model in model_scores}
 
 
 def confidence_ambiguity_rank(
@@ -159,7 +155,7 @@ def confidence_ambiguity_rank(
             "neighbour_p": None,
             "scores": [],
         }
-        for  model in data[0]["scores"]
+        for model in data[0]["scores"]
     ]
     cost = 0
     # cold start phase
@@ -179,24 +175,26 @@ def confidence_ambiguity_rank(
         for rank, model in enumerate(models):
             # confidence interval
             model["ci"] = utils.confidence_interval(model["scores"])
-            model["ci"] = model["ci"][1]-model["ci"][0]
-            
+            model["ci"] = model["ci"][1] - model["ci"][0]
+
             # neighbours
             neighbours = []
             if rank > 0:
-                neighbours.append(models[rank-1])
-            if rank < len(models) -1:
-                neighbours.append(models[rank+1])
+                neighbours.append(models[rank - 1])
+            if rank < len(models) - 1:
+                neighbours.append(models[rank + 1])
 
             # neighbour p-value
-            model["neighbour_p"] = sum([
-                # TODO: change to scipy.stats.ttest_rel
-                utils.pval(
-                    model["scores"],
-                    neighbour["scores"],
-                )
-                for neighbour in neighbours
-            ])
+            model["neighbour_p"] = sum(
+                [
+                    # TODO: change to scipy.stats.ttest_rel
+                    utils.pval(
+                        model["scores"],
+                        neighbour["scores"],
+                    )
+                    for neighbour in neighbours
+                ]
+            )
 
     weight_ci, weight_p = weight_ci_p
 
@@ -205,27 +203,30 @@ def confidence_ambiguity_rank(
         recompute_meta()
         # rank models based on ci and neighbour p-value independently
         # then average the rank
-        model_rank_ci = enumerate(sorted(
-            models,
-            key=lambda x: x["ci"],
-            reverse=True,
-        ))
         model_rank_ci = {
             model["model"]: rank
-            for rank, model in model_rank_ci
+            for rank, model in enumerate(
+                sorted(
+                    models,
+                    key=lambda x: x["ci"],
+                    reverse=True,
+                )
+            )
         }
-        model_rank_p = enumerate(sorted(
-            models,
-            key=lambda x: x["neighbour_p"],
-            reverse=True,
-        ))
         model_rank_p = {
             model["model"]: rank
-            for rank, model in model_rank_p
+            for rank, model in enumerate(
+                sorted(
+                    models,
+                    key=lambda x: x["neighbour_p"],
+                    reverse=True,
+                )
+            )
         }
         model = min(
             [m for m in models if m["index"] < len(data)],
-            key=lambda m: weight_ci * model_rank_ci[m["model"]] + weight_p * model_rank_p[m["model"]],
+            key=lambda m: weight_ci * model_rank_ci[m["model"]]
+            + weight_p * model_rank_p[m["model"]],
         )
         item = data[model["index"]]
         model["scores"].append(item["scores"][model["model"]])
@@ -234,9 +235,6 @@ def confidence_ambiguity_rank(
 
         if cost >= budgets[0]:
             budgets = budgets[1:]
-            output.append({
-                model["model"]: list(model["scores"])
-                for model in models
-            })
+            output.append({model["model"]: list(model["scores"]) for model in models})
 
     return output
