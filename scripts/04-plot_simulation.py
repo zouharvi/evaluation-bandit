@@ -1,6 +1,6 @@
 # %%
 
-from translation_tournament import simulation, algorithms
+from translation_bandit import simulation, algorithms
 
 outputs_baseline = simulation.simulate(
     fn=algorithms.baseline
@@ -39,7 +39,7 @@ outputs_epsilon_greedy_smooth = simulation.simulate(
 
 # %%
 
-from translation_tournament import utils_fig
+from translation_bandit import utils_fig
 import collections
 import numpy as np
 import matplotlib.pyplot as plt

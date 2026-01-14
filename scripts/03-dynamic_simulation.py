@@ -1,6 +1,6 @@
 # %%
 
-from translation_tournament import algorithms, utils
+from translation_bandit import algorithms, utils
 import importlib
 
 importlib.reload(algorithms)

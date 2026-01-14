@@ -1,5 +1,5 @@
 [project]
-name = "translation-tournament"
+name = "translation-bandit"
 version = "0.0.0"
 description = "Dynamic Contrastive Evaluation with Humans"
 readme = "README.md"
@@ -19,12 +19,12 @@ dependencies = [
 dev = ["pytest"]
 
 [project.urls]
-Repository = "https://github.com/zouharvi/translation-tournament"
-Issues = "https://github.com/zouharvi/translation-tournament/issues"
+Repository = "https://github.com/zouharvi/translation-bandit"
+Issues = "https://github.com/zouharvi/translation-bandit/issues"
 
 [tool.setuptools]
-package-dir = { "translation_tournament" = "src" }
-packages = ["translation_tournament"]
+package-dir = { "translation_bandit" = "translation_bandit" }
+packages = ["translation_bandit"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

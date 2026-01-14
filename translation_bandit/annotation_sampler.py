@@ -3,7 +3,7 @@ import random
 import statistics
 import numpy as np
 import itertools
-from translation_tournament import utils
+from translation_bandit import utils
 
 Result = dict[str, float]
 

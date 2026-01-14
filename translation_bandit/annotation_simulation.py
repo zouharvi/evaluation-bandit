@@ -1,5 +1,5 @@
 import statistics
-from translation_tournament import sampler, utils
+from translation_bandit import annotation_sampler, utils
 import random
 import multiprocessing
 Result = dict[str, float]
@@ -36,7 +36,7 @@ def annotate_random(data, models) -> tuple[float, Result]:
 
 
 
-def _simulate(args: tuple[list[dict], sampler.Sampler]) -> tuple[list[float], list[float], list[float]]:
+def _simulate(args: tuple[list[dict], annotation_sampler.Sampler]) -> tuple[list[float], list[float], list[float]]:
     """
     Returns correlation with final ranking and total cost after each match.
     """
@@ -70,7 +70,7 @@ def _simulate(args: tuple[list[dict], sampler.Sampler]) -> tuple[list[float], li
 
     return costs, output_clu, output_cor
 
-def simulate(data, sampler: sampler.Sampler, n_runs: int = 100) -> tuple[list[float], list[float], list[float]]:
+def simulate(data, sampler: annotation_sampler.Sampler, n_runs: int = 100) -> tuple[list[float], list[float], list[float]]:
     """
     Returns correlation with final ranking and total cost after each match.
     Parallelized over n_runs using multiprocessing.

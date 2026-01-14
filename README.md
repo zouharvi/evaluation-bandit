@@ -1,4 +1,4 @@
-# Translation Tournament
+# Translation Bandit
 
 > **Abstract:** TODO:
 

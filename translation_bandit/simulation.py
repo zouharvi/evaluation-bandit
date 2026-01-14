@@ -1,4 +1,4 @@
-from . import utils
+from translation_bandit import utils
 import numpy as np
 
 def simulate(
