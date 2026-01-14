@@ -53,8 +53,7 @@ def successive_rejects(
         [m * phase for m, phase in zip(range(len(models), 1, -1), _phases)]
     )
     if expected_cost > budget * 1.25 or expected_cost < budget * 0.75:
-        print("Warning: budget too small/large for the selected phases.")
-        print("Expected cost:", expected_cost, "Budget:", budget)
+        print("Warning: budget too small/large for the selected phases. Expected cost:", expected_cost, "Budget:", budget)
 
     # last phase always takes all remaining budget
     _phases[-1] = budget
@@ -66,13 +65,17 @@ def successive_rejects(
     model_phase_elimintation = {}
     model_scores = {model: [] for model in models}
     for phase, phase_size in enumerate(_phases):
+        break_game = False
         for _ in range(phase_size):
             if not data or cost >= budget:
+                break_game = True
                 break
             item = data.pop(0)
             for model in models:
                 cost += 1
                 model_scores[model].append(item["scores"][model])
+        if break_game:
+            break
         # eliminate worst model
         model = min(
             models,
@@ -81,9 +84,10 @@ def successive_rejects(
         models.remove(model)
         model_phase_elimintation[model] = phase
 
-    # TODO: some of the last phases can be empty
-    # add last model
-    model_phase_elimintation[models[0]] = phase + 1 # type: ignore
+    # add last models still in the game
+    model_phase_elimintation |= {
+        model: len(_phases) for model in models
+    }
 
     if ranking_from_elimination:
         return model_phase_elimintation
@@ -93,10 +97,10 @@ def successive_rejects(
 
 def epsilon_greedy(
     data,
-    budget,
+    budgets: list[int],
     epsilon: Callable[[int, int], float] = lambda rank, total: 1 if rank < 3 else 0.1,
     coldstart=3,
-) -> utils.ModelScores:
+) -> list[utils.ModelScores]:
     """
     Rank-based epsilon-greedy approach
     """
@@ -115,8 +119,9 @@ def epsilon_greedy(
             cost += 1
     models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
 
+    output = []
     # active learning phase
-    while cost < budget:
+    while len(budgets) > 0:
         model = random.choices(
             models,
             weights=[
@@ -136,7 +141,12 @@ def epsilon_greedy(
         models = [model for model, i in model_index.items() if i < len(data)]
         models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
 
-    return {model: model_scores[model] for model in model_scores}
+
+        if cost >= budgets[0]:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
+
+    return output
 
 
 def confidence_ambiguity_rank(

@@ -1,33 +1,87 @@
+import collections
+from typing import Callable
 from translation_bandit import utils
 import numpy as np
+import concurrent.futures
+
+
+def _simulate(args):
+    (
+        seed,
+        data_name,
+        data,
+        fn,
+        fn_kwargs,
+        accepts_budgets,
+        ranking_only,
+        BUDGETS,
+    ) = args
+    budgets = [int(len(data) * len(data[0]["scores"]) * b) for b in BUDGETS]
+    if accepts_budgets:
+        model_scores_all = fn(data, budgets=budgets, **fn_kwargs)
+    else:
+        model_scores_all = [fn(data, budget, **fn_kwargs) for budget in budgets]
+    model_scores_true = {
+        model: [item["scores"][model] for item in data] for model in data[0]["scores"]
+    }
+    output = []
+    for budget, model_scores in zip(BUDGETS, model_scores_all):
+        if not ranking_only:
+            output.append(
+                {
+                    "budget": budget,
+                    "tau": utils.tau(model_scores, model_scores_true),
+                    "wtau": utils.wtau(model_scores, model_scores_true),
+                    "clup": utils.clusters_p(model_scores),
+                }
+            )
+        else:
+            pass
+            # TODO
+    return [result | {"data_name": data_name, "seed": seed} for result in output]
+
 
 def simulate(
-    fn,
+    fn: Callable,
+    data_names=None,
+    seeds=1,
+    fn_kwargs={},
     accepts_budgets=False,
+    ranking_only=False,
 ):
-    output = []
-    for data_name, data in utils.load_data().items():
-        # if data_name != "en-ko_KR":
-        #     continue
-        budgets = budgets = lambda: np.linspace(
-            200, int(len(data) * len(data[0]["scores"]) * 0.5), 10, dtype=int
+    BUDGETS = np.linspace(0.1, 1.0, 10, dtype=float)
+
+    data_all = [
+        (
+            seed,
+            data_name,
+            data,
+            fn,
+            fn_kwargs,
+            accepts_budgets,
+            ranking_only,
+            BUDGETS,
         )
-        if accepts_budgets:
-            model_scores_all = fn(data, budgets=budgets())
-        else:
-            model_scores_all = [
-                fn(data, budget) for budget in budgets()
-            ]
-        model_scores_true = {
-           model: [item["scores"][model] for item in data] for model in data[0]["scores"]
-        }
+        for data_name, data in utils.load_data().items()
+        if data_names is None or data_name in data_names
+        for seed in range(seeds)
+    ]
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        output = [item for list in executor.map(_simulate, data_all) for item in list]
+
+    # aggregate across seeds
+    data_agg = collections.defaultdict(list)
+    for item in output:
+        data_agg[(item["data_name"], item["budget"])].append(item)
     
-        for budget, model_scores in zip(budgets(), model_scores_all):
-            output.append({
-                "data_name": data_name,
-                "budget": budget,
-                "tau": utils.tau(model_scores, model_scores_true),
-                "wtau": utils.wtau(model_scores, model_scores_true),
-                "clup": utils.clusters_p(model_scores),
-            })
-    return output
+    def compute_stats(xs):
+        return {
+            "data_name": xs[0]["data_name"],
+            "budget": xs[0]["budget"],
+            "tau": np.mean([x["tau"] for x in xs]),
+            "wtau": np.mean([x["wtau"] for x in xs]),
+            "clup": np.mean([x["clup"] for x in xs]),
+            # TODO: confidence intervals
+        }
+
+    return [compute_stats(cs) for cs in data_agg.values()]

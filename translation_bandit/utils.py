@@ -11,37 +11,46 @@ warnings.filterwarnings(
 )
 
 
-def pval(scores1: ModelScores, scores2: ModelScores) -> float:
-    if len(scores1) < 2 or len(scores2) < 2:
+def pval(scores1: list[float], scores2: list[float]) -> float:
+    if len(scores1) <= 3 or len(scores2) <= 3:
         return 1.0
-    return scipy.stats.ttest_rel(
+    val = scipy.stats.ttest_rel(
         scores1 + [np.nan] * (len(scores2) - len(scores1)),
         scores2 + [np.nan] * (len(scores1) - len(scores2)),
         nan_policy="omit",
     ).pvalue
+    if np.isnan(val):
+        return 1.0
+    return val
 
 
 def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
-    return scipy.stats.kendalltau(
+    val: float = scipy.stats.kendalltau(
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         variant="b",
-    )[0]
+    )[
+        0
+    ]  # type: ignore
+    if np.isnan(val):
+        return 0.0
+    return val
 
 
 def wtau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     """
     weighted tau correlation. Prioritizes correct rankings for top models
     """
-    return scipy.stats.weightedtau(
+    val: float = scipy.stats.weightedtau(
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
-        weigher=lambda rank: (
-            1 if rank <= 2
-            else 0.5 if rank <= 5
-            else 0.001
-        )
-    )[0]
+        weigher=lambda rank: (1 if rank <= 2 else 0.5 if rank <= 5 else 0.001),
+    )[
+        0
+    ]  # type: ignore
+    if np.isnan(val):
+        return 0.0
+    return val
 
 
 def clusters_p(model_scores: ModelScores) -> float:
@@ -108,6 +117,7 @@ def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
         )
     }
 
+
 def load_data() -> dict[str, list[dict]]:
     import subset2evaluate.utils
 
@@ -117,8 +127,7 @@ def load_data() -> dict[str, list[dict]]:
             item
             | {
                 "scores": {
-                    model: model_v["human"]
-                    for model, model_v in item["scores"].items()
+                    model: model_v["human"] for model, model_v in item["scores"].items()
                 }
             }
             for item in v
@@ -139,3 +148,7 @@ def confidence_interval(scores: list[float], confidence=0.95) -> tuple[float, fl
     sem = scipy.stats.sem(scores)
     margin = sem * scipy.stats.t.ppf((1 + confidence) / 2.0, len(scores) - 1)
     return (mean - margin, mean + margin)
+
+
+def safe_mean(ys):
+    return np.mean([y for y in ys if y is not None and not np.isnan(y)])
