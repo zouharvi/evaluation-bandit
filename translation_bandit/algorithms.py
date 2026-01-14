@@ -49,11 +49,11 @@ def successive_rejects(
             f"Other (e.g. more dynamic) phase lengths not implemented yet."
         )
 
-    expected_cost = sum(
-        [m * phase for m, phase in zip(range(len(models), 1, -1), _phases)]
-    )
-    if expected_cost > budget * 1.25 or expected_cost < budget * 0.75:
-        print("Warning: budget too small/large for the selected phases. Expected cost:", expected_cost, "Budget:", budget)
+    # expected_cost = sum(
+    #     [m * phase for m, phase in zip(range(len(models), 1, -1), _phases)]
+    # )
+    # if expected_cost > budget * 1.25 or expected_cost < budget * 0.75:
+    #     print("Warning: budget too small/large for the selected phases. Expected cost:", expected_cost, "Budget:", budget)
 
     # last phase always takes all remaining budget
     _phases[-1] = budget
@@ -149,7 +149,7 @@ def epsilon_greedy(
     return output
 
 
-def confidence_ambiguity_rank(
+def confidence_ambiguity(
     data,
     budgets: list[int],
     coldstart=3,
@@ -197,7 +197,8 @@ def confidence_ambiguity_rank(
             # neighbour p-value
             model["neighbour_p"] = sum(
                 [
-                    # TODO: change to scipy.stats.ttest_rel
+                    # ttest_rel might have fewer intersecting samples than ttest_ind
+                    # but is stronger and ultimately better for our use case
                     utils.pval(
                         model["scores"],
                         neighbour["scores"],

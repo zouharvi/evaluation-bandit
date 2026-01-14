@@ -25,19 +25,21 @@ def _simulate(args):
         model: [item["scores"][model] for item in data] for model in data[0]["scores"]
     }
     output = []
-    for budget, model_scores in zip(BUDGETS, model_scores_all):
+    for budget_p, budget, model_scores in zip(BUDGETS, budgets, model_scores_all):
         if not ranking_only:
             output.append(
                 {
-                    "budget": budget,
+                    "budget": budget_p,
                     "tau": utils.tau(model_scores, model_scores_true),
-                    "wtau": utils.wtau(model_scores, model_scores_true),
+                    "wtau_smooth": utils.wtau_smooth(model_scores, model_scores_true),
+                    "wtau_top": utils.wtau_top(model_scores, model_scores_true),
                     "clup": utils.clusters_p(model_scores),
+                    "evalcount_smooth": utils.evalcount_smooth(model_scores, model_scores_true, budget),
+                    "evalcount_top": utils.evalcount_top(model_scores, model_scores_true, budget),
                 }
             )
         else:
-            pass
-            # TODO
+            raise NotImplementedError
     return [result | {"data_name": data_name, "seed": seed} for result in output]
 
 
@@ -49,7 +51,8 @@ def simulate(
     accepts_budgets=False,
     ranking_only=False,
 ):
-    BUDGETS = np.linspace(0.1, 1.0, 10, dtype=float)
+    print("Running", fn.__name__, "with", fn_kwargs)
+    BUDGETS = np.linspace(0.2, 0.9, 20, dtype=float)
 
     data_all = [
         (
@@ -73,15 +76,16 @@ def simulate(
     data_agg = collections.defaultdict(list)
     for item in output:
         data_agg[(item["data_name"], item["budget"])].append(item)
-    
+
     def compute_stats(xs):
-        return {
+        keys = ["tau", "wtau_smooth", "wtau_top", "clup", "evalcount_smooth", "evalcount_top"]
+        out = {
             "data_name": xs[0]["data_name"],
             "budget": xs[0]["budget"],
-            "tau": np.mean([x["tau"] for x in xs]),
-            "wtau": np.mean([x["wtau"] for x in xs]),
-            "clup": np.mean([x["clup"] for x in xs]),
-            # TODO: confidence intervals
         }
+        for key in keys:
+            out[key] = np.mean([x[key] for x in xs])
+            out[key + "_ci"] = utils.confidence_interval([x[key] for x in xs])
+        return out
 
     return [compute_stats(cs) for cs in data_agg.values()]

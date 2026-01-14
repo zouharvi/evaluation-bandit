@@ -79,7 +79,7 @@ for budget in budgets():
     )
 
 print()
-model_scores_all = algorithms.confidence_ambiguity_rank(
+model_scores_all = algorithms.confidence_ambiguity(
     data,
     budgets=budgets(),
     weight_ci_p=(0, 1),

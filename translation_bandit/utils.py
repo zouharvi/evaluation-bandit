@@ -1,3 +1,4 @@
+from typing import Callable
 import numpy as np
 import scipy.stats
 import statistics
@@ -6,9 +7,9 @@ import warnings
 
 ModelScores = dict[str, list[float]]
 
-warnings.filterwarnings(
-    "ignore", category=RuntimeWarning, message="Precision loss occurred"
-)
+# warnings.filterwarnings(
+#     "ignore", category=RuntimeWarning, message="Precision loss occurred"
+# )
 
 
 def pval(scores1: list[float], scores2: list[float]) -> float:
@@ -18,7 +19,20 @@ def pval(scores1: list[float], scores2: list[float]) -> float:
         scores1 + [np.nan] * (len(scores2) - len(scores1)),
         scores2 + [np.nan] * (len(scores1) - len(scores2)),
         nan_policy="omit",
-    ).pvalue
+    ).pvalue # type: ignore
+    if np.isnan(val):
+        return 1.0
+    return val
+
+
+def pval_ind(scores1: list[float], scores2: list[float]) -> float:
+    if len(scores1) <= 3 or len(scores2) <= 3:
+        return 1.0
+    val = scipy.stats.ttest_ind(
+        scores1,
+        scores2,
+        nan_policy="omit",
+    ).pvalue # type: ignore
     if np.isnan(val):
         return 1.0
     return val
@@ -37,7 +51,23 @@ def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     return val
 
 
-def wtau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
+def wtau_smooth(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
+    """
+    weighted tau correlation. Prioritizes correct rankings for better models
+    """
+    val: float = scipy.stats.weightedtau(
+        [statistics.mean(model_scores1[model]) for model in model_scores1],
+        [statistics.mean(model_scores2[model]) for model in model_scores1],
+        weigher=lambda rank: 1 / (rank + 1),
+    )[
+        0
+    ]  # type: ignore
+    if np.isnan(val):
+        return 0.0
+    return val
+
+
+def wtau_top(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     """
     weighted tau correlation. Prioritizes correct rankings for top models
     """
@@ -51,6 +81,63 @@ def wtau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     if np.isnan(val):
         return 0.0
     return val
+
+
+def evalcount_smooth(model_scores1: ModelScores, model_scores2: ModelScores, budget: int) -> float:
+    return evalcount(
+        model_scores1,
+        model_scores2,
+        budget,
+        weigher=lambda rank: 1 / (rank + 1),
+    )
+
+def evalcount_top(model_scores1: ModelScores, model_scores2: ModelScores, budget: int) -> float:
+    return evalcount(
+        model_scores1,
+        model_scores2,
+        budget,
+        weigher=lambda rank: (1 if rank <= 2 else 0.5 if rank <= 5 else 0.001),
+    )
+    
+def evalcount(
+        model_scores1: ModelScores,
+        model_scores2: ModelScores,
+        budget: int,
+        weigher: Callable[[int], float],
+) -> float:
+    # sort model_score1 by model_scores2
+    model_scores1 = sorted(
+        model_scores1.items(),
+        key=lambda m: statistics.mean(model_scores2[m[0]]),
+        reverse=True,
+    ) # type: ignore
+    weights = [weigher(r) for r in range(len(model_scores1))]
+    weight_sum = sum(weights)
+
+    evalcount = sum([
+        weights[r] / weight_sum * len(scores)
+        for r, (model, scores) in enumerate(model_scores1)
+    ])
+
+    model_scores2 = sorted(
+        model_scores2.items(),
+        key=lambda m: statistics.mean(m[1]),
+        reverse=True,
+    ) # type: ignore
+    model_scores2_budget = {}
+    for model, scores in model_scores2:
+        model_scores2_budget[model] = scores[:budget]
+        budget -= len(scores)
+        if budget <= 0:
+            break
+
+    evalcount_maximum = sum([
+        weights[r] / weight_sum * len(scores)
+        for r, (model, scores) in enumerate(model_scores2_budget.items())
+    ])
+
+    return evalcount / evalcount_maximum
+
 
 
 def clusters_p(model_scores: ModelScores) -> float:
@@ -139,8 +226,33 @@ def load_data() -> dict[str, list[dict]]:
     return data
 
 
-def load_data_single(langs="en-cs_CZ") -> list[dict]:
-    return load_data()[langs]
+def load_data_bydomains() -> dict[str, list[dict]]:
+    import subset2evaluate.utils
+    import collections
+
+    data = subset2evaluate.utils.load_data_wmt_all(normalize=False)
+    data = [[
+            item
+            | {
+                "scores": {
+                    model: model_v["human"] for model, model_v in item["scores"].items()
+                },
+                "data_name": k[1],
+            }
+            for item in v
+        ]
+        for k, v in data.items()
+        if k[0] == "wmt25"
+    ]
+    data_agg = collections.defaultdict(list)
+    for data in data:
+        for item in data:
+            data_agg[(item["data_name"], item["domain"])].append(item)
+
+    return {
+        f"{data_name}_{domain}": items
+        for (data_name, domain), items in data_agg.items()
+    }
 
 
 def confidence_interval(scores: list[float], confidence=0.95) -> tuple[float, float]:
