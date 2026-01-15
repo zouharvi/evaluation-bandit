@@ -55,7 +55,7 @@ for budget in budgets():
 
 print()
 for budget in budgets():
-    model_scores = algorithms.epsilon_greedy(data, budget)
+    model_scores = algorithms.weighted_sampling(data, budget)
     print(
         f"Budget: {budget:>4}",
         f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
@@ -65,7 +65,7 @@ for budget in budgets():
 
 print()
 for budget in budgets():
-    model_scores = algorithms.epsilon_greedy(
+    model_scores = algorithms.weighted_sampling(
         data,
         budget,
         epsilon=lambda rank, total: (1 if rank <= 2 else 0.5 if rank <= 5 else 0.1),
@@ -79,7 +79,7 @@ for budget in budgets():
     )
 
 print()
-model_scores_all = algorithms.confidence_ambiguity(
+model_scores_all = algorithms.pointwise_pairwise_ambiguity(
     data,
     budgets=budgets(),
     weight_ci_p=(0, 1),

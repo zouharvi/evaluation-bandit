@@ -45,9 +45,7 @@ def successive_rejects(
         # TODO: missing number of models
         _phases = [math.ceil(budget * (p / total) / (len(models) - 2)) for p in _phases]
     else:
-        raise ValueError(
-            f"Other (e.g. more dynamic) phase lengths not implemented yet."
-        )
+        raise ValueError("Other (e.g. more dynamic) phase lengths not implemented yet.")
 
     # expected_cost = sum(
     #     [m * phase for m, phase in zip(range(len(models), 1, -1), _phases)]
@@ -85,9 +83,7 @@ def successive_rejects(
         model_phase_elimintation[model] = phase
 
     # add last models still in the game
-    model_phase_elimintation |= {
-        model: len(_phases) for model in models
-    }
+    model_phase_elimintation |= {model: len(_phases) for model in models}
 
     if ranking_from_elimination:
         return model_phase_elimintation
@@ -95,10 +91,11 @@ def successive_rejects(
         return {model: model_scores[model] for model in model_scores}
 
 
-def epsilon_greedy(
+def weighted_sampling(
     data,
     budgets: list[int],
-    epsilon: Callable[[int, int], float] = lambda rank, total: 1 if rank < 3 else 0.1,
+    sampling_fn: Callable[[list[float], int, int], float] = lambda x, rank, total: 1
+    / (rank + 1),
     coldstart=3,
 ) -> list[utils.ModelScores]:
     """
@@ -125,11 +122,12 @@ def epsilon_greedy(
         model = random.choices(
             models,
             weights=[
-                epsilon(
+                sampling_fn(
+                    model_scores[model],
                     rank,
                     len(models),
                 )
-                for rank in range(len(models))
+                for model, rank in zip(models, range(len(models)))
             ],
             k=1,
         )[0]
@@ -141,7 +139,6 @@ def epsilon_greedy(
         models = [model for model, i in model_index.items() if i < len(data)]
         models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
 
-
         if cost >= budgets[0]:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
@@ -149,11 +146,12 @@ def epsilon_greedy(
     return output
 
 
-def confidence_ambiguity(
+def pointwise_pairwise_ambiguity(
     data,
     budgets: list[int],
     coldstart=3,
-    weight_ci_p=(1, 1),
+    weight_pointwise=1,
+    weight_pairwise=1,
 ) -> list[utils.ModelScores]:
     data = list(data)
     random.shuffle(data)
@@ -207,8 +205,6 @@ def confidence_ambiguity(
                 ]
             )
 
-    weight_ci, weight_p = weight_ci_p
-
     output = []
     while len(budgets) > 0:
         recompute_meta()
@@ -236,8 +232,8 @@ def confidence_ambiguity(
         }
         model = min(
             [m for m in models if m["index"] < len(data)],
-            key=lambda m: weight_ci * model_rank_ci[m["model"]]
-            + weight_p * model_rank_p[m["model"]],
+            key=lambda m: weight_pointwise * model_rank_ci[m["model"]]
+            + weight_pairwise * model_rank_p[m["model"]],
         )
         item = data[model["index"]]
         model["scores"].append(item["scores"][model["model"]])
