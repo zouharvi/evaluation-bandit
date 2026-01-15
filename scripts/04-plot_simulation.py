@@ -173,6 +173,54 @@ plt.savefig("../figures/simulation_wmt25_legend.svg")
 plt.show()
 
 # %%
+import collections
+# area under curve
+
+outputs = {
+    "Random": outputs_baseline,
+    "Successive rejects": outputs_successive_rejects_constant,
+    "Point-$&$pairwise ambiguity": outputs_pointwise_pairwise_ambiguity,
+    "Sampling rank-based": outputs_stochastic_sampling_ranksmooth,
+    "Sampling Bolzmann": outputs_stochastic_sampling_bolzmann,
+}
+
+
+def area_under_curve(outputs, key):
+    data_by_budget = collections.defaultdict(list)
+    for output in outputs:
+        data_by_budget[output["budget"]].append(output)
+    data_by_budget = sorted(data_by_budget.values(), key=lambda d: d[0]["budget"])
+
+    x = np.trapz(
+        y=[
+            np.mean([x[key] for x in xs])
+            for xs in data_by_budget
+            if xs[0]["budget"] >= 0.2 and xs[0]["budget"] <= 0.9
+        ],
+        x=[
+            xs[0]["budget"]
+            for xs in data_by_budget
+            if xs[0]["budget"] >= 0.2 and xs[0]["budget"] <= 0.9
+        ],
+    ) / (0.9 - 0.2)
+    return f"{x:.3f}"
+
+
+keys = {
+    "tau": r"Standard $\tau$",
+    "wtau_smooth": r"Weighted $\tau$",
+    "clup": r"Average $p$-value",
+    "evalcount_smooth": r"Evaluation focus",
+}
+
+for output_name, output in outputs.items():
+    print(
+        f"{output_name:<30}",
+        *(area_under_curve(output, key) for key in keys.keys()),
+    )
+
+
+# %%
 import os
 import pickle
 
