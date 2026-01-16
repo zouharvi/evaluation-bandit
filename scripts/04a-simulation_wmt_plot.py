@@ -3,15 +3,15 @@
 import json
 
 def read_computed(method):
-    with open(f"../computed/simulation_wmt25_{method}.json", "r") as f:
+    with open(f"../computed/simulation_wmt_{method}.json", "r") as f:
         return json.load(f)
     
 outputs = [
     {"typst": "Random", "latex": "Random", "internal": "baseline"},
     {"typst": "Successive rejects", "latex": "Successive rejects", "internal": "successive_rejects_constant"},
     {"typst": "Sampling rank-based", "latex": "Sampling rank-based", "internal": "stochastic_sampling_ranksmooth"},
-    {"typst": "Sampling Bolzmann", "latex": "Sampling Bolzmann", "internal": "stochastic_sampling_bolzmann"},
     {"typst": "Sampling $epsilon$-Greedy", "latex": "Sampling $\\epsilon$-Greedy", "internal": "stochastic_sampling_epsilongreedy"},
+    {"typst": "Sampling Bolzmann", "latex": "Sampling Bolzmann", "internal": "stochastic_sampling_bolzmann"},
     {"typst": "Ambiguity reduc. $lambda$=$1$", "latex": "Ambiguity reduction $\\lambda=1$", "internal": "ambiguity_reduction_11"},
     {"typst": "Ambiguity reduc. $lambda$=$0$", "latex": "Ambiguity reduction $\\lambda=0$", "internal": "ambiguity_reduction_01"},
     {"typst": "Ambiguity reduc. $lambda$=$infinity$", "latex": "Ambiguity reduction $\\lambda=\\infty$", "internal": "ambiguity_reduction_10"},
@@ -37,7 +37,6 @@ for output in outputs:
     except FileNotFoundError:
         print(f"Warning: computed file for method {output['internal']} not found.")
 
-# %%
 
 from translation_bandit import utils_fig
 import collections
@@ -81,7 +80,7 @@ fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(8, 4.5))
 axs = axs.flatten()
 
 for output_i, output in enumerate(outputs):
-    if output["latex"] is None:
+    if output["latex"] is None or "data" not in output:
         continue
     plot_output(
         output["data"],
@@ -120,7 +119,7 @@ axs[2].set_ylim(None, 0.6)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
-plt.savefig("../figures/simulation_wmt25.svg")
+plt.savefig("../figures/simulation_wmt.svg")
 plt.show()
 
 
@@ -139,12 +138,11 @@ fig_legend.legend(
 )
 fig_legend.tight_layout(pad=0)
 plt.axis("off")
-plt.savefig("../figures/simulation_wmt25_legend.svg")
+plt.savefig("../figures/simulation_wmt_legend.svg")
 plt.show()
 
-# %%
-# area under curve
 
+# area under curve table
 
 def area_under_curve(outputs, key):
     data_by_budget = collections.defaultdict(list)
@@ -200,7 +198,7 @@ table.cell(
     align: center,
     rotate(-90deg, reflow: true)[*Model-selection*]
 ),
-        """)
+""", end="")
     print(
         f"[{output['typst']:<37}]",
         *(
@@ -222,7 +220,7 @@ table.cell(
     align: center,
     rotate(-90deg, reflow: true)[*Item-selection*]
 ),
-    """, end="")
+""", end="")
     print(
         f"[{output['typst']:<37}]",
         *(

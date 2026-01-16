@@ -214,7 +214,7 @@ def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
     }
 
 
-def load_data(human_only=True) -> dict[str, list[dict]]:
+def load_data(human_only=True, wmts=["wmt25", "wmt24", "wmt23"]) -> dict[str, list[dict]]:
     import subset2evaluate.utils
 
     data = subset2evaluate.utils.load_data_wmt_all(normalize=False)
@@ -234,7 +234,7 @@ def load_data(human_only=True) -> dict[str, list[dict]]:
             for item in v
         ]
         for k, v in data.items()
-        if k[0] == "wmt25"
+        if k[0] in wmts
     }
 
     return data

@@ -21,6 +21,11 @@ if args.method == "baseline":
         fn=algorithms.baseline,
         seeds=args.seeds,
     )
+elif args.method == "baseline_nonsquare":
+    output = simulation.simulate(
+        fn=algorithms.baseline_nonsquare,
+        seeds=args.seeds,
+    )
 elif args.method == "successive_rejects_constant":
     output = simulation.simulate(
         fn=algorithms.successive_rejects,
@@ -155,7 +160,7 @@ else:
 
 
 os.makedirs("computed/", exist_ok=True)
-with open(f"computed/simulation_wmt25_{args.method}.json", "w") as f:
+with open(f"computed/simulation_wmt_{args.method}.json", "w") as f:
     json.dump(output, f)
 
 
@@ -175,7 +180,7 @@ function sbatch_cpu() {
 	--mail-user vilem.zouhar@gmail.com \
         --ntasks-per-node=1 \
         --cpus-per-task=100 \
-        --mem-per-cpu=100M \
+        --mem-per-cpu=300M \
         --time=0-2 \
         --wrap="$JOB_WRAP";
 }
@@ -193,7 +198,7 @@ function sbatch_gpu() {
 	--mail-user vilem.zouhar@gmail.com \
         --ntasks-per-node=1 \
         --cpus-per-task=10 \
-        --mem-per-cpu=2G \
+        --mem-per-cpu=6G \
         --time=0-2 \
         --wrap="$JOB_WRAP";
 }
@@ -206,7 +211,7 @@ for method in s2e_metricvar s2e_metricavg s2e_metriccons s2e_diversity_bleu s2e_
     sbatch_cpu "sim_wmt25_$method" "python3 scripts/04b-simulation_wmt25_compute.py --method $method"
 done
 
-for method in s2e_diversity_lm s2e_cometconfidence  s2e_sentinel_mqm s2e_precomet_diffdisc; do
+for method in s2e_diversity_lm  s2e_sentinel_mqm s2e_precomet_diffdisc; do
     sbatch_gpu "sim_wmt25_$method" "python3 scripts/04b-simulation_wmt25_compute.py --method $method"
 done
 
@@ -228,7 +233,7 @@ function sbatch_gpu_bigmem() {
 	--mail-user vilem.zouhar@gmail.com \
         --ntasks-per-node=1 \
         --cpus-per-task=20 \
-        --mem-per-cpu=2G \
+        --mem-per-cpu=6G \
         --time=0-2 \
         --wrap="$JOB_WRAP";
 }

@@ -10,6 +10,26 @@ def baseline(data, budget) -> utils.ModelScores:
 
     return utils.items_to_model_scores(items, average=False)
 
+def baseline_nonsquare(data, budget) -> utils.ModelScores:
+    # shallow copy
+    data = list(data)
+    random.shuffle(data)
+    models = list(data[0]["scores"].keys())
+    model_scores = {model: [] for model in models}
+    cost = 0
+    while cost < budget and models:
+        # randomly sample a model that's still available
+        model = random.choice(models)
+        # find next item for the model
+        item = data[len(model_scores[model])]
+        model_scores[model].append(item["scores"][model])
+        cost += 1
+        # if model has no more items, remove it from available models
+        if len(model_scores[model]) >= len(data):
+            models.remove(model)
+
+    return model_scores
+
 
 def successive_rejects(
     data,
