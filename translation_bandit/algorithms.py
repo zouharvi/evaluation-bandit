@@ -146,7 +146,10 @@ def weighted_sampling(
     return output
 
 
-def pointwise_pairwise_ambiguity(
+import collections
+
+
+def statistical_ambiguity_reduction(
     data,
     budgets: list[int],
     coldstart=3,
@@ -160,7 +163,7 @@ def pointwise_pairwise_ambiguity(
             "model": model,
             "index": 0,
             "ci": None,
-            "neighbour_p": None,
+            "pvalue": collections.defaultdict(lambda: None),
             "scores": [],
         }
         for model in data[0]["scores"]
@@ -174,40 +177,30 @@ def pointwise_pairwise_ambiguity(
             model["index"] += 1
             cost += 1
 
-    def recompute_meta():
+    def recompute_meta(model_dirty):
         nonlocal models
-        # TODO: can be optimized to only update changed models
-        # but that needs to propagate to neighbours
+        model_dirty["ci"] = utils.confidence_interval(model_dirty["scores"])
+        model_dirty["ci"] = model_dirty["ci"][1] - model_dirty["ci"][0]
 
-        models.sort(key=lambda m: utils.statistics.mean(m["scores"]), reverse=True)
-        for rank, model in enumerate(models):
-            # confidence interval
-            model["ci"] = utils.confidence_interval(model["scores"])
-            model["ci"] = model["ci"][1] - model["ci"][0]
+        for model in models:
+            if model == model_dirty:
+                continue
 
-            # neighbours
-            neighbours = []
-            if rank > 0:
-                neighbours.append(models[rank - 1])
-            if rank < len(models) - 1:
-                neighbours.append(models[rank + 1])
-
-            # neighbour p-value
-            model["neighbour_p"] = sum(
-                [
-                    # ttest_rel might have fewer intersecting samples than ttest_ind
-                    # but is stronger and ultimately better for our use case
-                    utils.pval(
-                        model["scores"],
-                        neighbour["scores"],
-                    )
-                    for neighbour in neighbours
-                ]
+            # ttest_rel might have fewer intersecting samples than ttest_ind
+            # but is stronger and ultimately better for our use case
+            model["pvalue"][model_dirty["model"]] = utils.pval(
+                model_dirty["scores"],
+                model["scores"],
             )
+            model_dirty["pvalue"][model["model"]] = model["pvalue"][
+                model_dirty["model"]
+            ]
+
+    for model in models:
+        recompute_meta(model)
 
     output = []
     while len(budgets) > 0:
-        recompute_meta()
         # rank models based on ci and neighbour p-value independently
         # then average the rank
         model_rank_ci = {
@@ -225,7 +218,7 @@ def pointwise_pairwise_ambiguity(
             for rank, model in enumerate(
                 sorted(
                     models,
-                    key=lambda x: x["neighbour_p"],
+                    key=lambda x: sum(x["pvalue"].values()),
                     reverse=True,
                 )
             )
@@ -239,6 +232,8 @@ def pointwise_pairwise_ambiguity(
         model["scores"].append(item["scores"][model["model"]])
         model["index"] += 1
         cost += 1
+
+        recompute_meta(model)
 
         if cost >= budgets[0]:
             budgets = budgets[1:]

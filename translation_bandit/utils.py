@@ -43,7 +43,9 @@ def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         variant="b",
-    )[0]  # type: ignore
+    )[
+        0
+    ]  # type: ignore
     if np.isnan(val):
         return 0.0
     return val
@@ -57,7 +59,9 @@ def wtau_smooth(model_scores1: ModelScores, model_scores2: ModelScores) -> float
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         weigher=lambda rank: 1 / (rank + 1),
-    )[0]  # type: ignore
+    )[
+        0
+    ]  # type: ignore
     if np.isnan(val):
         return 0.0
     return val
@@ -71,7 +75,9 @@ def wtau_top(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         weigher=lambda rank: (1 if rank <= 2 else 0.5 if rank <= 5 else 0.001),
-    )[0]  # type: ignore
+    )[
+        0
+    ]  # type: ignore
     if np.isnan(val):
         return 0.0
     return val
@@ -208,18 +214,23 @@ def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
     }
 
 
-def load_data() -> dict[str, list[dict]]:
+def load_data(human_only=True) -> dict[str, list[dict]]:
     import subset2evaluate.utils
 
     data = subset2evaluate.utils.load_data_wmt_all(normalize=False)
     data = {
         k[1]: [
             item
-            | {
-                "scores": {
-                    model: model_v["human"] for model, model_v in item["scores"].items()
+            | (
+                {
+                    "scores": {
+                        model: model_v["human"]
+                        for model, model_v in item["scores"].items()
+                    }
                 }
-            }
+                if human_only
+                else {}
+            )
             for item in v
         ]
         for k, v in data.items()

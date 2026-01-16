@@ -79,7 +79,7 @@ for budget in budgets():
     )
 
 print()
-model_scores_all = algorithms.pointwise_pairwise_ambiguity(
+model_scores_all = algorithms.statistical_ambiguity_reduction(
     data,
     budgets=budgets(),
     weight_ci_p=(0, 1),
