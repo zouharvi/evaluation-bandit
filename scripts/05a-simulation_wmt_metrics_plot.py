@@ -3,7 +3,7 @@
 import json
 
 def read_computed(method):
-    with open(f"../computed/simulation_wmt_{method}.json", "r") as f:
+    with open(f"../computed/simulation_wmt_metrics_{method}.json", "r") as f:
         return json.load(f)
     
 outputs = [
@@ -15,20 +15,6 @@ outputs = [
     {"typst": "Ambiguity reduction $lambda$=$1$", "latex": "Ambiguity reduction $\\lambda=1$", "internal": "ambiguity_reduction_11"},
     {"typst": "Ambiguity reduction $lambda$=$0$", "latex": "Ambiguity reduction $\\lambda=0$", "internal": "ambiguity_reduction_01"},
     {"typst": "Ambiguity reduction $lambda$=$infinity$", "latex": "Ambiguity reduction $\\lambda=\\infty$", "internal": "ambiguity_reduction_10"},
-    # no LaTeX for s2e
-    {"typst": "MetricVar", "latex": None, "internal": "s2e_metricvar"},
-    {"typst": "MetricAvg", "latex": None, "internal": "s2e_metricavg"},
-    {"typst": "MetricCons", "latex": None, "internal": "s2e_metriccons"},
-    {"typst": "$k$-means", "latex": None, "internal": "s2e_kmeans"},
-    {"typst": "DiffUse", "latex": None, "internal": "s2e_diffuse"},
-    {"typst": "Brute Greedy", "latex": None, "internal": "s2e_brute_greedy"},
-    {"typst": "Brute", "latex": None, "internal": "s2e_brute"},
-    {"typst": "Diversity BLEU", "latex": None, "internal": "s2e_diversity_bleu"},
-    {"typst": "Diversity Unigram", "latex": None, "internal": "s2e_diversity_unigram"},
-    {"typst": "Diversity LM", "latex": None, "internal": "s2e_diversity_lm"},
-    {"typst": "Instant confidence", "latex": None, "internal": "s2e_cometconfidence"},
-    {"typst": "Sentinel MQM", "latex": None, "internal": "s2e_sentinel_mqm"},
-    {"typst": "Pre-Comet DiffDisc", "latex": None, "internal": "s2e_precomet_diffdisc"},
 ]
 
 for output in outputs:
@@ -119,7 +105,7 @@ axs[2].set_ylim(None, 0.6)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
-plt.savefig("../figures/simulation_wmt.svg")
+plt.savefig("../figures/simulation_wmt_metrics.svg")
 plt.show()
 
 
@@ -138,7 +124,7 @@ fig_legend.legend(
 )
 fig_legend.tight_layout(pad=0)
 plt.axis("off")
-plt.savefig("../figures/simulation_wmt_legend.svg")
+plt.savefig("../figures/simulation_wmt_metrics_legend.svg")
 plt.show()
 
 

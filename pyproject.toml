@@ -13,6 +13,7 @@ keywords = [
     "annotation",
 ]
 dependencies = [
+    "subset2evaluate>=1.0.18"
 ]
 
 [project.optional-dependencies]

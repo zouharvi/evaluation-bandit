@@ -1,4 +1,4 @@
-from translation_bandit import simulation, algorithms
+from translation_bandit import simulation, algorithms, utils
 import argparse
 import math
 import statistics
@@ -13,8 +13,6 @@ args.add_argument(
     "--seeds", type=int, default=100,
 )
 args = args.parse_args()
-
-
 
 if args.method == "baseline":
     output = simulation.simulate(
@@ -180,8 +178,8 @@ function sbatch_cpu() {
 	--mail-user vilem.zouhar@gmail.com \
         --ntasks-per-node=1 \
         --cpus-per-task=100 \
-        --mem-per-cpu=300M \
-        --time=0-2 \
+        --mem-per-cpu=600M \
+        --time=0-4 \
         --wrap="$JOB_WRAP";
 }
 
@@ -199,24 +197,25 @@ function sbatch_gpu() {
         --ntasks-per-node=1 \
         --cpus-per-task=10 \
         --mem-per-cpu=6G \
-        --time=0-2 \
+        --time=0-4 \
         --wrap="$JOB_WRAP";
 }
 
+
 for method in baseline successive_rejects_constant stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-    sbatch_cpu "sim_wmt25_$method" "python3 scripts/04b-simulation_wmt25_compute.py --method $method"
+    sbatch_cpu "sim_wmt_$method" "python3 scripts/04b-simulation_wmt_compute.py --method $method"
 done
 
 for method in s2e_metricvar s2e_metricavg s2e_metriccons s2e_diversity_bleu s2e_diversity_unigram; do
-    sbatch_cpu "sim_wmt25_$method" "python3 scripts/04b-simulation_wmt25_compute.py --method $method"
+    sbatch_cpu "sim_wmt_$method" "python3 scripts/04b-simulation_wmt_compute.py --method $method"
 done
 
 for method in s2e_diversity_lm  s2e_sentinel_mqm s2e_precomet_diffdisc; do
-    sbatch_gpu "sim_wmt25_$method" "python3 scripts/04b-simulation_wmt25_compute.py --method $method"
+    sbatch_gpu "sim_wmt_$method" "python3 scripts/04b-simulation_wmt_compute.py --method $method"
 done
 
 for method in s2e_kmeans s2e_diffuse s2e_brute_greedy s2e_brute; do
-    sbatch_gpu "sim_wmt25_$method" "python3 scripts/04b-simulation_wmt25_compute.py --method $method"
+    sbatch_gpu "sim_wmt_$method" "python3 scripts/04b-simulation_wmt_compute.py --method $method"
 done
 
 
@@ -234,10 +233,12 @@ function sbatch_gpu_bigmem() {
         --ntasks-per-node=1 \
         --cpus-per-task=20 \
         --mem-per-cpu=6G \
-        --time=0-2 \
+        --time=0-4 \
         --wrap="$JOB_WRAP";
 }
-method=s2e_cometconfidence
-sbatch_gpu_bigmem "sim_wmt25_$method" "python3 scripts/04b-simulation_wmt25_compute.py --method $method"
+method=s2e_diffuse
+sbatch_gpu_bigmem "sim_wmt_$method" "python3 scripts/04b-simulation_wmt_compute.py --method $method"
 
+method=s2e_cometconfidence
+sbatch_gpu_bigmem "sim_wmt_$method" "python3 scripts/04b-simulation_wmt_compute.py --method $method"
 """

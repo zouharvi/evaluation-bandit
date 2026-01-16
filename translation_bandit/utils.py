@@ -214,12 +214,16 @@ def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
     }
 
 
-def load_data(human_only=True, wmts=["wmt25", "wmt24", "wmt23"]) -> dict[str, list[dict]]:
+def load_data(
+    human_scores_only=True,
+    require_human_scores=True,
+    wmt_years={"wmt25", "wmt24", "wmt23", "wmt23.sent"},
+) -> dict[str, list[dict]]:
     import subset2evaluate.utils
 
-    data = subset2evaluate.utils.load_data_wmt_all(normalize=False)
+    data = subset2evaluate.utils.load_data_wmt_all(normalize=False, require_human=require_human_scores)
     data = {
-        k[1]: [
+        f"{k[0]}_{k[1]}": [
             item
             | (
                 {
@@ -228,17 +232,60 @@ def load_data(human_only=True, wmts=["wmt25", "wmt24", "wmt23"]) -> dict[str, li
                         for model, model_v in item["scores"].items()
                     }
                 }
-                if human_only
+                if human_scores_only
                 else {}
             )
             for item in v
         ]
         for k, v in data.items()
-        if k[0] in wmts
+        if k[0] in wmt_years
     }
 
     return data
 
+
+def load_data_bymetrics() -> dict[str, list[dict]]:
+    data_all = load_data(human_scores_only=False, require_human_scores=False)
+    data_out = {}
+    for data_name, data in data_all.items():
+        for metric in list(data[0]["scores"].values())[0].keys():
+            data_new = [
+                item | {
+                    "scores": {
+                        model: model_v[metric] if metric in model_v else None
+                        for model, model_v in item["scores"].items()
+                    }
+                }
+                for item in data
+            ]
+            # filter out models with more than 100 None scores
+            models_to_keep = [
+                model
+                for model in data_new[0]["scores"].keys()
+                if sum(item["scores"][model] is None for item in data_new) <= 100
+            ]
+            for item in data_new:
+                item["scores"] = {
+                    model: score
+                    for model, score in item["scores"].items()
+                    if model in models_to_keep
+                }
+            if not models_to_keep:
+                continue
+
+            # filter out lines with None scores at any model
+            data_new = [
+                item
+                for item in data_new
+                if all(
+                    model_v is not None
+                    for model_v in item["scores"].values()
+                )
+            ]
+            if len(data_new) <= 100:
+                continue
+            data_out[f"{data_name}_{metric}"] = data_new
+    return data_out
 
 def load_data_bydomains() -> dict[str, list[dict]]:
     import subset2evaluate.utils

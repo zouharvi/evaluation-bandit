@@ -17,7 +17,7 @@ ax.axis("off")
 
 # Save as SVG
 plt.tight_layout(pad=0)
-plt.savefig("../figures/harmonic_microplot_pow1.svg", transparent=True)
+plt.savefig("../figures/weight_microplot_pow1.svg", transparent=True)
 plt.show()
 
 # Data generation
@@ -35,7 +35,7 @@ ax.axis("off")
 
 # Save as SVG
 plt.tight_layout(pad=0)
-plt.savefig("../figures/harmonic_microplot_pow3.svg", transparent=True)
+plt.savefig("../figures/weight_microplot_pow3.svg", transparent=True)
 plt.show()
 
 
@@ -54,5 +54,5 @@ ax.axis("off")
 
 # Save as SVG
 plt.tight_layout(pad=0)
-plt.savefig("../figures/harmonic_microplot_top.svg", transparent=True)
+plt.savefig("../figures/weight_microplot_top.svg", transparent=True)
 plt.show()

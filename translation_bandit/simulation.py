@@ -56,6 +56,7 @@ def simulate(
     fn_kwargs={},
     accepts_budgets=False,
     ranking_only=False,
+    fn_data_all=utils.load_data,
 ):
     print("Running", fn.__name__, "with", fn_kwargs)
 
@@ -70,7 +71,7 @@ def simulate(
             ranking_only,
             BUDGETS,
         )
-        for data_name, data in utils.load_data().items()
+        for data_name, data in fn_data_all().items()
         if data_names is None or data_name in data_names
         for seed in range(seeds)
     ]
@@ -167,7 +168,7 @@ def simulate_subset2evaluate(
             fn_kwargs,
             BUDGETS,
         )
-        for data_name, data in utils.load_data(human_only=False).items()
+        for data_name, data in utils.load_data(human_scores_only=False).items()
         if data_names is None or data_name in data_names
         for _ in range(seeds)
     ]
@@ -262,7 +263,7 @@ def simulate_subset2evaluate_perbudget(
             fn_kwargs,
             BUDGETS,
         )
-        for data_name, data in utils.load_data(human_only=False).items()
+        for data_name, data in utils.load_data(human_scores_only=False).items()
         if data_names is None or data_name in data_names
     ]
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
