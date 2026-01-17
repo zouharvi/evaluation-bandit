@@ -243,6 +243,20 @@ def load_data(
 
     return data
 
+def load_data_synth(seed=0, num_models=40, **kwargs) -> dict[str, list[dict]]:
+    import random
+
+    r_local = random.Random(seed)
+    data_all = load_data(human_scores_only=True, **kwargs)
+    for data in data_all.values():
+        for i in range(num_models-len(data[0]["scores"])):
+            model_name = f"synth_model_{i}"
+            model = r_local.choice(list(data[0]["scores"].keys()))
+            offset = r_local.uniform(-1, -10)
+            for item in data:
+                item["scores"][model_name] = item["scores"][model] + offset
+    return data_all
+
 
 def load_data_bymetrics() -> dict[str, list[dict]]:
     data_all = load_data(human_scores_only=False, require_human_scores=False)

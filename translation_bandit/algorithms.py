@@ -116,7 +116,7 @@ def weighted_sampling(
     budgets: list[int],
     sampling_fn: Callable[[list[float], int, int], float] = lambda x, rank, total: 1
     / (rank + 1),
-    coldstart=3,
+    coldstart=5,
 ) -> list[utils.ModelScores]:
     """
     Rank-based epsilon-greedy approach
@@ -172,7 +172,7 @@ import collections
 def statistical_ambiguity_reduction(
     data,
     budgets: list[int],
-    coldstart=3,
+    coldstart=5,
     weight_pointwise=1,
     weight_pairwise=1,
 ) -> list[utils.ModelScores]:
