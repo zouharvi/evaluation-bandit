@@ -136,7 +136,7 @@ elif args.method == "s2e_precomet_diffdisc":
 elif args.method == "s2e_diffuse":
     output = simulation.simulate_subset2evaluate_perbudget(
         fn_kwargs=dict(method="diffuse"),
-        max_workers=4,
+        max_workers=2,
     )
 elif args.method == "s2e_kmeans":
     output = simulation.simulate_subset2evaluate_perbudget(
