@@ -2,15 +2,17 @@ import math
 import random
 from typing import Any, Callable, Literal
 
+import collections
 from . import utils
 
 
-def baseline(data, budget) -> utils.ModelScores:
+def uniform(data, budget) -> utils.ModelScores:
     items = random.sample(data, k=budget // len(data[0]["scores"]))
 
     return utils.items_to_model_scores(items, average=False)
 
-def baseline_nonsquare(data, budget) -> utils.ModelScores:
+
+def uniform_random(data, budget) -> utils.ModelScores:
     # shallow copy
     data = list(data)
     random.shuffle(data)
@@ -166,9 +168,6 @@ def weighted_sampling(
     return output
 
 
-import collections
-
-
 def statistical_ambiguity_reduction(
     data,
     budgets: list[int],
@@ -220,7 +219,7 @@ def statistical_ambiguity_reduction(
         recompute_meta(model)
 
     output = []
-    while len(budgets) > 0:
+    while budgets:
         # rank models based on ci and neighbour p-value independently
         # then average the rank
         model_rank_ci = {
@@ -258,5 +257,72 @@ def statistical_ambiguity_reduction(
         if cost >= budgets[0]:
             budgets = budgets[1:]
             output.append({model["model"]: list(model["scores"]) for model in models})
+
+    return output
+
+
+def upper_confidence_bound(
+    data,
+    budgets: list[int],
+    c: float = math.sqrt(2),
+    coldstart: int = 5,
+    topk: int = 1,
+) -> list[utils.ModelScores]:
+    """
+    Upper Confidence Bound (UCB1) algorithm.
+    """
+    # Initialize data and models
+    data = list(data)
+    random.shuffle(data)
+    models = list(data[0]["scores"].keys())
+
+    # Track scores and counts for each model
+    model_scores = {model: [] for model in models}
+    model_counts = {model: 0 for model in models}
+    model_sum_scores = {model: 0.0 for model in models}
+
+    # To keep track of where we are in the data for each model
+    model_index = {model: 0 for model in models}
+    cost = 0
+    output = []
+
+    # Cold start: sample each model coldstart times
+    for _ in range(coldstart):
+        for model in models:
+            if model_index[model] < len(data):
+                score = data[model_index[model]]["scores"][model]
+                model_scores[model].append(score)
+                model_sum_scores[model] += score
+                model_counts[model] += 1
+                model_index[model] += 1
+                cost += 1
+
+    while budgets and cost < budgets[0]:
+        # Calculate UCB for all models
+        # UCB = mean + c * sqrt(ln(total_counts) / model_counts)
+        ucb_scores = {}
+        models = [model for model in models if model_index[model] < len(data)]
+
+        total_counts = sum(model_counts.values())
+        ln_total = math.log(total_counts)
+        for model in models:
+            mean = model_sum_scores[model] / model_counts[model]
+            exploration = c * math.sqrt(ln_total / model_counts[model])
+            ucb_scores[model] = mean + exploration
+
+        # Select topk models
+        selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk]
+
+        for model in selected_models:
+            score = data[model_index[model]]["scores"][model]
+            model_scores[model].append(score)
+            model_sum_scores[model] += score
+            model_counts[model] += 1
+            model_index[model] += 1
+            cost += 1
+
+        if cost >= budgets[0]:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
 
     return output

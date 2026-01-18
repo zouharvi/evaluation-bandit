@@ -8,26 +8,30 @@ import functools
 
 args = argparse.ArgumentParser()
 args.add_argument(
-    "--method", type=str, required=True,
+    "--method",
+    type=str,
+    required=True,
 )
 args.add_argument(
-    "--seeds", type=int, default=100,
+    "--seeds",
+    type=int,
+    default=100,
 )
 args = args.parse_args()
 
 simulate_fn = functools.partial(
     simulation.simulate,
     seeds=args.seeds,
-    fn_data_all=functools.partial(utils.load_data_synth, wmt_years=["wmt25"])
+    fn_data_all=functools.partial(utils.load_data_synth, wmt_years=["wmt25"]),
 )
 
 if args.method == "baseline":
     output = simulate_fn(
-        fn=algorithms.baseline,
+        fn=algorithms.uniform,
     )
 elif args.method == "baseline_nonsquare":
     output = simulate_fn(
-        fn=algorithms.baseline_nonsquare,
+        fn=algorithms.uniform_random,
     )
 elif args.method == "successive_rejects_constant":
     output = simulate_fn(
@@ -35,6 +39,7 @@ elif args.method == "successive_rejects_constant":
         fn_kwargs=dict(phases="constant"),
     )
 elif args.method == "stochastic_sampling_ranksmooth":
+
     def sampling_fn_ranksmooth(ys, rank, total):
         return 1 / (rank + 1)
 
@@ -44,6 +49,7 @@ elif args.method == "stochastic_sampling_ranksmooth":
         accepts_budgets=True,
     )
 elif args.method == "stochastic_sampling_bolzmann":
+
     def sampling_fn_bolzmann(ys, rank, total, temperature=1):
         return math.exp(statistics.mean(ys) / temperature)
 
@@ -53,6 +59,7 @@ elif args.method == "stochastic_sampling_bolzmann":
         accepts_budgets=True,
     )
 elif args.method == "stochastic_sampling_epsilongreedy":
+
     def sampling_fn_epsilongreedy(ys, rank, total, epsilon=0.5):
         if rank == 0:
             return 1.0 - epsilon
@@ -84,8 +91,6 @@ elif args.method == "ambiguity_reduction_10":
     )
 else:
     raise ValueError(f"Unknown method: {args.method}")
-
-
 
 
 os.makedirs("computed/", exist_ok=True)

@@ -25,7 +25,7 @@ budgets = lambda: np.linspace(
 )
 
 for budget in budgets():
-    model_scores = algorithms.baseline(data, budget)
+    model_scores = algorithms.uniform(data, budget)
     print(
         f"Budget: {budget:>4}",
         f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",

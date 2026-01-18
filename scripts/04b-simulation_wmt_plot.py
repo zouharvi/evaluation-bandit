@@ -2,20 +2,57 @@
 
 import json
 
+
 def read_computed(method):
     with open(f"../computed/simulation_wmt_{method}.json", "r") as f:
         return json.load(f)
-    
+
+
 outputs = [
-    {"typst": "Uniform", "latex": "Uniform", "internal": "baseline"},
-    {"typst": "Successive rejects", "latex": "Successive rejects", "internal": "successive_rejects_constant"},
-    {"typst": "Sampling rank-based", "latex": "Sampling rank-based", "internal": "stochastic_sampling_ranksmooth"},
-    {"typst": "Sampling $epsilon$-Greedy", "latex": "Sampling $\\epsilon$-Greedy", "internal": "stochastic_sampling_epsilongreedy"},
-    {"typst": "Sampling Bolzmann", "latex": "Sampling Bolzmann", "internal": "stochastic_sampling_bolzmann"},
-    {"typst": "Ambiguity reduction $lambda$=$1$", "latex": "Ambiguity reduction $\\lambda=1$", "internal": "ambiguity_reduction_11"},
-    {"typst": "Ambiguity reduction $lambda$=$0$", "latex": "Ambiguity reduction $\\lambda=0$", "internal": "ambiguity_reduction_01"},
-    {"typst": "Ambiguity reduction $lambda$=$infinity$", "latex": "Ambiguity reduction $\\lambda=\\infty$", "internal": "ambiguity_reduction_10"},
+    {"typst": "Uniform", "latex": "Uniform", "internal": "uniform"},
+    {
+        "typst": "Successive rejects",
+        "latex": "Successive rejects",
+        "internal": "successive_rejects_constant",
+    },
+    {
+        "typst": "Sampling rank-based",
+        "latex": "Sampling rank-based",
+        "internal": "stochastic_sampling_ranksmooth",
+    },
+    {
+        "typst": "Sampling $epsilon$-Greedy",
+        "latex": "Sampling $\\epsilon$-Greedy",
+        "internal": "stochastic_sampling_epsilongreedy",
+    },
+    {
+        "typst": "Sampling Bolzmann",
+        "latex": "Sampling Bolzmann",
+        "internal": "stochastic_sampling_bolzmann",
+    },
+    {
+        "typst": "Upper Confidence Bound",
+        "latex": "Upper Confidence Bound",
+        "internal": "ucb_c50",
+    },
+    {
+        "typst": "Ambiguity reduction $lambda$=$1$",
+        "latex": "Ambiguity reduction $\\lambda=1$",
+        "internal": "ambiguity_reduction_11",
+    },
     # no LaTeX for s2e
+    {
+        "typst": "Ambiguity reduction $lambda$=$0$",
+        "latex": None,
+        "internal": "ambiguity_reduction_01",
+    },
+    {
+        "typst": "Ambiguity reduction $lambda$=$infinity$",
+        "latex": None,
+        "internal": "ambiguity_reduction_10",
+    },
+    # {"typst": "UCB c=100", "latex": None, "internal": "ucb_c100"},
+    # {"typst": "UCB c=200", "latex": None, "internal": "ucb_c200"},
     {"typst": "MetricVar", "latex": None, "internal": "s2e_metricvar"},
     {"typst": "MetricAvg", "latex": None, "internal": "s2e_metricavg"},
     {"typst": "MetricCons", "latex": None, "internal": "s2e_metriccons"},
@@ -64,7 +101,7 @@ def plot_output(outputs, label, axs, color=None):
             label=label,
             color=color,
             linewidth=2.0,
-            zorder=2 if label == "Random" else 1,
+            zorder=2 if label == "Uniform" else 1,
         )
         ax.fill_between(
             xs,
@@ -86,7 +123,8 @@ for output_i, output in enumerate(outputs):
         output["data"],
         output["latex"],
         axs,
-        color="black" if output["internal"] == "baseline" else f"C{output_i - 1}",)
+        color="black" if output["internal"] == "uniform" else f"C{output_i - 1}",
+    )
 
 for ax in axs:
     ax.spines[["top", "right"]].set_visible(False)
@@ -115,7 +153,8 @@ format_ax_label(axs[3], 0.52, 0.20, r"Evaluation focus $\uparrow$")
 axs[3].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 axs[0].set_ylim(0.85, 1.0 + 0.01)
 axs[1].set_ylim(0.85, 1.0 + 0.01)
-axs[2].set_ylim(None, 0.6)
+axs[2].set_ylim(None, 0.55)
+axs[3].set_ylim(0.25, None)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
@@ -143,6 +182,7 @@ plt.show()
 
 
 # area under curve table
+
 
 def area_under_curve(outputs, key):
     data_by_budget = collections.defaultdict(list)
@@ -189,16 +229,23 @@ print(
 )
 print("cmidrule(end: 2),")
 
-outputs_local = [x for x in outputs if not x["internal"].startswith("s2e_") and x["internal"] != "baseline"]
+outputs_local = [
+    x
+    for x in outputs
+    if not x["internal"].startswith("s2e_") and x["internal"] != "uniform"
+]
 for output_i, output in enumerate(outputs_local):
     if output_i == 0:
-        print(f"""
+        print(
+            f"""
 table.cell(
     rowspan: {len(outputs_local)}, 
     align: center,
     rotate(-90deg, reflow: true)[*Model-selection*]
 ),
-""", end="")
+""",
+            end="",
+        )
     print(
         f"[{output['typst']:<37}]",
         *(
@@ -211,16 +258,23 @@ table.cell(
 
 
 print("cmidrule(end: 2),")
-outputs_local = [x for x in outputs if x["internal"].startswith("s2e_") and x["internal"] != "baseline"]
+outputs_local = [
+    x
+    for x in outputs
+    if x["internal"].startswith("s2e_") and x["internal"] != "baseline"
+]
 for output_i, output in enumerate(outputs_local):
     if output_i == 0:
-        print(f"""
+        print(
+            f"""
 table.cell(
     rowspan: {len(outputs_local)}, 
     align: center,
     rotate(-90deg, reflow: true)[*Item-selection*]
 ),
-""", end="")
+""",
+            end="",
+        )
     print(
         f"[{output['typst']:<37}]",
         *(

@@ -7,21 +7,25 @@ import json
 
 args = argparse.ArgumentParser()
 args.add_argument(
-    "--method", type=str, required=True,
+    "--method",
+    type=str,
+    required=True,
 )
 args.add_argument(
-    "--seeds", type=int, default=100,
+    "--seeds",
+    type=int,
+    default=100,
 )
 args = args.parse_args()
 
 if args.method == "baseline":
     output = simulation.simulate(
-        fn=algorithms.baseline,
+        fn=algorithms.uniform,
         seeds=args.seeds,
     )
 elif args.method == "baseline_nonsquare":
     output = simulation.simulate(
-        fn=algorithms.baseline_nonsquare,
+        fn=algorithms.uniform_random,
         seeds=args.seeds,
     )
 elif args.method == "successive_rejects_constant":
@@ -31,6 +35,7 @@ elif args.method == "successive_rejects_constant":
         seeds=args.seeds,
     )
 elif args.method == "stochastic_sampling_ranksmooth":
+
     def sampling_fn_ranksmooth(ys, rank, total):
         return 1 / (rank + 1)
 
@@ -41,7 +46,8 @@ elif args.method == "stochastic_sampling_ranksmooth":
         seeds=args.seeds,
     )
 elif args.method == "stochastic_sampling_bolzmann":
-    def sampling_fn_bolzmann(ys, rank, total, temperature=1):
+
+    def sampling_fn_bolzmann(ys, rank, total, temperature=10):
         return math.exp(statistics.mean(ys) / temperature)
 
     output = simulation.simulate(
@@ -51,6 +57,7 @@ elif args.method == "stochastic_sampling_bolzmann":
         seeds=args.seeds,
     )
 elif args.method == "stochastic_sampling_epsilongreedy":
+
     def sampling_fn_epsilongreedy(ys, rank, total, epsilon=0.5):
         if rank == 0:
             return 1.0 - epsilon
@@ -60,6 +67,13 @@ elif args.method == "stochastic_sampling_epsilongreedy":
     output = simulation.simulate(
         fn=algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_epsilongreedy),
+        accepts_budgets=True,
+        seeds=args.seeds,
+    )
+elif args.method == "ucb":
+    output = simulation.simulate(
+        fn=algorithms.upper_confidence_bound,
+        fn_kwargs=dict(topk=3, c=50),
         accepts_budgets=True,
         seeds=args.seeds,
     )
@@ -153,8 +167,6 @@ elif args.method == "s2e_brute":
     )
 else:
     raise ValueError(f"Unknown method: {args.method}")
-
-
 
 
 os.makedirs("computed/", exist_ok=True)
