@@ -19,7 +19,7 @@ model_to_color = {
     "model A": "#080",
     "model B": "#880",
     # mix of green and red
-    "model C": "#a40",
+    "model C": "#950",
     # dark red but not bright
     "model D": "#a00",
 }
@@ -70,6 +70,17 @@ def plot_trace(ax, model_scores, plot_name=None):
             ha="right",
             va="bottom",
         )
+        # text model names
+        for model in models_sorted:
+            ax.text(
+                6.5,
+                statistics.mean(model_scores[model]),
+                model,
+                fontsize=8,
+                ha="left",
+                va="center",
+                color=model_to_color[model],
+            )
     if ax == ax2:
         ax.text(
             1,
@@ -126,10 +137,10 @@ def plot_trace(ax, model_scores, plot_name=None):
 
 
 model_scores_all = {
-    "model A": [90, 100, 50, 80, 80, 60, 100, 90, 90],
-    "model B": [80, 90, 60, 100, 50, 70, 70, 40, 80],
-    "model C": [45, 80, 40, 60, 80, 50, 50, 40],
-    "model D": [10, 70, 40, 30, 50, 30, 70, 80],
+    "model A": [92, 100, 50, 80, 80, 60, 100, 90, 90],
+    "model B": [78, 100, 60, 100, 51, 70, 70, 40, 80],
+    "model C": [45, 75, 40, 60, 80, 50, 50, 40],
+    "model D": [10, 75, 40, 30, 50, 30, 70, 80],
 }
 
 model_scores_random = {k: v[:7] for k, v in model_scores_all.items()}
