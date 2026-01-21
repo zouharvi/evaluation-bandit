@@ -1,7 +1,7 @@
 [project]
-name = "translation-bandit"
+name = "evaluation-bandit"
 version = "0.0.0"
-description = "Dynamic Contrastive Evaluation with Humans"
+description = "Dynamic allocation of human evaluation via bandits"
 readme = "README.md"
 license = { text = "apache-2.0" }
 requires-python = ">=3.12"
@@ -20,12 +20,12 @@ dependencies = [
 dev = ["pytest"]
 
 [project.urls]
-Repository = "https://github.com/zouharvi/translation-bandit"
-Issues = "https://github.com/zouharvi/translation-bandit/issues"
+Repository = "https://github.com/zouharvi/evaluation-bandit"
+Issues = "https://github.com/zouharvi/evaluation-bandit/issues"
 
 [tool.setuptools]
-package-dir = { "translation_bandit" = "translation_bandit" }
-packages = ["translation_bandit"]
+package-dir = { evaluation_bandit = "evaluation_bandit" }
+packages = ["evaluation_bandit"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

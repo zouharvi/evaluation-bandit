@@ -75,7 +75,7 @@ for output in outputs:
         print(f"Warning: computed file for method {output['internal']} not found.")
 
 
-from translation_bandit import utils_fig
+from evaluation_bandit import utils_fig
 import collections
 import numpy as np
 import matplotlib.pyplot as plt

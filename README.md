@@ -1,4 +1,4 @@
-# Translation Bandit
+# Allocating Human Evaluation via Bandits
 
 > **Abstract:** TODO:
 

@@ -1,11 +1,12 @@
 import collections
 import math
 from typing import Callable
-from translation_bandit import utils
+from evaluation_bandit import utils
 import numpy as np
 import concurrent.futures
 
 BUDGETS = np.linspace(0.1, 0.9, 20, dtype=float)
+
 
 def _simulate(args):
     (
@@ -104,8 +105,6 @@ def simulate(
     return [compute_stats(cs) for cs in data_agg.values()]
 
 
-
-
 def _simulate_subset2evaluate(args):
     (
         data_name,
@@ -119,17 +118,20 @@ def _simulate_subset2evaluate(args):
     # hotfix for missing values
     for item in data:
         for model in item["scores"]:
-            item["scores"][model]["MetricX-25"] = item["scores"][model].get("MetricX-25", 0)
+            item["scores"][model]["MetricX-25"] = item["scores"][model].get(
+                "MetricX-25", 0
+            )
     data_s2e = subset2evaluate.select_subset.basic(data, **fn_kwargs)
     model_scores_true = {
-        model: [item["scores"][model]["human"] for item in data] for model in data[0]["scores"]
+        model: [item["scores"][model]["human"] for item in data]
+        for model in data[0]["scores"]
     }
     output = []
     for budget_p, budget in zip(BUDGETS, budgets):
         cost = 0
         model_scores = collections.defaultdict(list)
         for item in data_s2e:
-            for model, model_score in item["scores"].items(): # type: ignore
+            for model, model_score in item["scores"].items():  # type: ignore
                 model_scores[model].append(model_score["human"])
                 cost += 1
                 if cost > budget:
@@ -153,6 +155,7 @@ def _simulate_subset2evaluate(args):
         )
     return [result | {"data_name": data_name} for result in output]
 
+
 def simulate_subset2evaluate(
     data_names=None,
     fn_kwargs={},
@@ -173,7 +176,11 @@ def simulate_subset2evaluate(
         for _ in range(seeds)
     ]
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        output = [item for list in executor.map(_simulate_subset2evaluate, data_all) for item in list]
+        output = [
+            item
+            for list in executor.map(_simulate_subset2evaluate, data_all)
+            for item in list
+        ]
 
     # aggregate across seeds
     data_agg = collections.defaultdict(list)
@@ -201,8 +208,6 @@ def simulate_subset2evaluate(
     return [compute_stats(cs) for cs in data_agg.values()]
 
 
-
-
 def _simulate_subset2evaluate_perbudget(args):
     (
         data_name,
@@ -216,17 +221,22 @@ def _simulate_subset2evaluate_perbudget(args):
     # hotfix for missing values
     for item in data:
         for model in item["scores"]:
-            item["scores"][model]["MetricX-25"] = item["scores"][model].get("MetricX-25", 0)
+            item["scores"][model]["MetricX-25"] = item["scores"][model].get(
+                "MetricX-25", 0
+            )
     model_scores_true = {
-        model: [item["scores"][model]["human"] for item in data] for model in data[0]["scores"]
+        model: [item["scores"][model]["human"] for item in data]
+        for model in data[0]["scores"]
     }
     output = []
     for budget_p, budget in zip(BUDGETS, budgets):
-        data_s2e = subset2evaluate.select_subset.basic(data, budget=math.ceil(budget_p * len(data)), **fn_kwargs)
+        data_s2e = subset2evaluate.select_subset.basic(
+            data, budget=math.ceil(budget_p * len(data)), **fn_kwargs
+        )
         cost = 0
         model_scores = collections.defaultdict(list)
         for item in data_s2e:
-            for model, model_score in item["scores"].items(): # type: ignore
+            for model, model_score in item["scores"].items():  # type: ignore
                 model_scores[model].append(model_score["human"])
                 cost += 1
                 if cost > budget:
@@ -250,6 +260,7 @@ def _simulate_subset2evaluate_perbudget(args):
         )
     return [result | {"data_name": data_name} for result in output]
 
+
 def simulate_subset2evaluate_perbudget(
     data_names=None,
     fn_kwargs={},
@@ -267,7 +278,11 @@ def simulate_subset2evaluate_perbudget(
         if data_names is None or data_name in data_names
     ]
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        output = [item for list in executor.map(_simulate_subset2evaluate_perbudget, data_all) for item in list]
+        output = [
+            item
+            for list in executor.map(_simulate_subset2evaluate_perbudget, data_all)
+            for item in list
+        ]
 
     # aggregate across seeds
     data_agg = collections.defaultdict(list)

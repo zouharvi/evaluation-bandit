@@ -1,6 +1,6 @@
 # %%
 
-from translation_bandit import algorithms, utils
+from evaluation_bandit import algorithms, utils
 import importlib
 
 importlib.reload(algorithms)

@@ -1,7 +1,8 @@
 import statistics
-from translation_bandit import annotation_sampler, utils
+from evaluation_bandit import annotation_sampler, utils
 import random
 import multiprocessing
+
 Result = dict[str, float]
 
 
@@ -15,7 +16,7 @@ def annotate_random(data, models) -> tuple[float, Result]:
     K = len(models)
 
     # base cost + decay per additional model
-    cost = 1 + (K - 1)**0.8
+    cost = 1 + (K - 1) ** 0.8
 
     if K == 1:
         noise = random.uniform(-15, 15)
@@ -27,16 +28,16 @@ def annotate_random(data, models) -> tuple[float, Result]:
     results_mean = statistics.mean(results)
     results = {
         model: max(
-            0, 
-            min(100, (result - results_mean) * noise_linear + results_mean + noise)
+            0, min(100, (result - results_mean) * noise_linear + results_mean + noise)
         )
         for model, result in zip(models, results)
     }
     return cost, results
 
 
-
-def _simulate(args: tuple[list[dict], annotation_sampler.Sampler]) -> tuple[list[float], list[float], list[float]]:
+def _simulate(
+    args: tuple[list[dict], annotation_sampler.Sampler],
+) -> tuple[list[float], list[float], list[float]]:
     """
     Returns correlation with final ranking and total cost after each match.
     """
@@ -55,22 +56,20 @@ def _simulate(args: tuple[list[dict], annotation_sampler.Sampler]) -> tuple[list
         cost, results = annotate_random(data, models)
         sampler.record_match(results)
         costs.append(costs[-1] + cost if costs else cost)
-        model_ranking = {
-            model: sampler.model_skill(model) for model in sampler.models
-        }
+        model_ranking = {model: sampler.model_skill(model) for model in sampler.models}
         output_clu.append(
             utils.model_clusters(
                 {model: sampler.scores[model] for model in sampler.models}
             )
         )
-        output_cor.append(
-            utils.model_correlation(model_ranking_true, model_ranking)
-        )
-
+        output_cor.append(utils.model_correlation(model_ranking_true, model_ranking))
 
     return costs, output_clu, output_cor
 
-def simulate(data, sampler: annotation_sampler.Sampler, n_runs: int = 100) -> tuple[list[float], list[float], list[float]]:
+
+def simulate(
+    data, sampler: annotation_sampler.Sampler, n_runs: int = 100
+) -> tuple[list[float], list[float], list[float]]:
     """
     Returns correlation with final ranking and total cost after each match.
     Parallelized over n_runs using multiprocessing.

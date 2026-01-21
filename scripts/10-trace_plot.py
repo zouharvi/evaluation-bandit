@@ -1,11 +1,11 @@
 # %%
 
-import translation_bandit.utils
+import evaluation_bandit.utils
 import random
 import statistics
 
 # ict_keys(['wmt25_cs-de_DE', 'wmt25_cs-uk_UA', 'wmt25_en-ar_EG', 'wmt25_en-bho_IN', 'wmt25_en-cs_CZ', 'wmt25_en-et_EE', 'wmt25_en-is_IS', 'wmt25_en-it_IT', 'wmt25_en-ja_JP', 'wmt25_en-ko_KR', 'wmt25_en-mas_KE', 'wmt25_en-ru_RU', 'wmt25_en-sr_Cyrl_RS', 'wmt25_en-uk_UA', 'wmt25_en-zh_CN', 'wmt25_ja-zh_CN', 'wmt24_cs-uk', 'wmt24_en-cs', 'wmt24_en-de', 'wmt24_en-es', 'wmt24_en-hi', 'wmt24_en-is', 'wmt24_en-ja', 'wmt24_en-ru', 'wmt24_en-uk', 'wmt24_en-zh', 'wmt24_ja-zh', 'wmt23.sent_en-de', 'wmt23_cs-uk', 'wmt23_de-en', 'wmt23_en-cs', 'wmt23_en-de', 'wmt23_en-ja', 'wmt23_en-zh', 'wmt23_he-en', 'wmt23_ja-en', 'wmt23_zh-en'])
-data = translation_bandit.utils.load_data()["wmt25_cs-de_DE"]
+data = evaluation_bandit.utils.load_data()["wmt25_cs-de_DE"]
 random.Random(0).shuffle(data)
 
 
@@ -45,9 +45,6 @@ while True:
 model_scores_random = model_scores
 model_ranks_random = model_ranks
 model_counts_random = model_counts
-
-
-
 
 
 # stochastic sampling based on ranksmooth
@@ -123,7 +120,7 @@ while True:
     models_sorted_global = sorted(models, key=lambda m: model_means[m], reverse=True)
     for rank, m in enumerate(models_sorted_global):
         model_ranks[m].append(rank)
-    
+
 
 model_scores_sampling = model_scores
 model_ranks_sampling = model_ranks
@@ -131,15 +128,16 @@ model_counts_sampling = model_counts
 
 # %%
 
-import translation_bandit.utils_fig
+import evaluation_bandit.utils_fig
 import matplotlib.pyplot as plt
 
 
 def plot_trace(model_scores, model_ranks, model_counts, plot_name=None):
     fig, (ax1, ax2, ax3) = plt.subplots(
-        nrows=1, ncols=3,
+        nrows=1,
+        ncols=3,
         figsize=(9, 2.5),
-        gridspec_kw={'width_ratios': [3, 3, 1]},
+        gridspec_kw={"width_ratios": [3, 3, 1]},
     )
 
     models = model_scores.keys()
@@ -151,7 +149,7 @@ def plot_trace(model_scores, model_ranks, model_counts, plot_name=None):
     models_sorted = sorted(
         models,
         key=lambda m: statistics.mean([item["scores"][m] for item in data]),
-        reverse=True
+        reverse=True,
     )
     for model_i, model in enumerate(models_sorted):
         steps, scores = zip(*model_scores[model])
@@ -159,24 +157,21 @@ def plot_trace(model_scores, model_ranks, model_counts, plot_name=None):
         # based on model_i/len(models_sorted) get from cmap
         color = cmap(1 - model_i / len(models_sorted))
         ax1.plot(
-            steps, scores,
+            steps,
+            scores,
             label=model,
             color=color,
             linewidth=1,
-            zorder=100-model_i,
+            zorder=100 - model_i,
         )
         ax2.plot(
-            [r+1 for r in ranks],
+            [r + 1 for r in ranks],
             label=model,
             color=color,
             linewidth=1,
-            zorder=100-model_i,
+            zorder=100 - model_i,
         )
-    model_i_local = sorted(
-        models,
-        key=lambda m: model_scores[m][-1][1],
-        reverse=True
-    )
+    model_i_local = sorted(models, key=lambda m: model_scores[m][-1][1], reverse=True)
     model_i_local = {m: i for i, m in enumerate(model_i_local)}
     for model_i, model in enumerate(models_sorted):
         color = cmap(1 - model_i_local[model] / len(models_sorted))
@@ -184,16 +179,18 @@ def plot_trace(model_scores, model_ranks, model_counts, plot_name=None):
             model_i,
             model_counts[model],
             color=color,
-            zorder=100-model_i,
+            zorder=100 - model_i,
         )
         ax3.text(
             5,
-            model_i-0.05,
+            model_i - 0.05,
             model,
             va="center",
             fontsize=6,
-            color="black" if model_i_local[model] > 3 and model_i_local[model] < 18 else "white",
-            zorder=100-model_i,
+            color="black"
+            if model_i_local[model] > 3 and model_i_local[model] < 18
+            else "white",
+            zorder=100 - model_i,
         )
 
     ax3.spines[["top", "right", "left"]].set_visible(False)
@@ -222,4 +219,6 @@ def plot_trace(model_scores, model_ranks, model_counts, plot_name=None):
 
 
 plot_trace(model_scores_random, model_ranks_random, model_counts_random, "random")
-plot_trace(model_scores_sampling, model_ranks_sampling, model_counts_sampling, "sampling")
+plot_trace(
+    model_scores_sampling, model_ranks_sampling, model_counts_sampling, "sampling"
+)

@@ -1,7 +1,7 @@
 # %%
 
-import translation_bandit.utils_fig
-import translation_bandit.utils
+import evaluation_bandit.utils_fig
+import evaluation_bandit.utils
 import matplotlib.pyplot as plt
 import statistics
 
@@ -47,7 +47,7 @@ def plot_trace(ax, model_scores, plot_name=None):
             marker="o",
         )
         ci = [
-            translation_bandit.utils.confidence_interval(v, confidence=0.3)
+            evaluation_bandit.utils.confidence_interval(v, confidence=0.3)
             for v in scores
         ]
         ax.fill_between(

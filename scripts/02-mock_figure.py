@@ -2,24 +2,99 @@
 
 data = {
     "A": [
-        55, 65, 75, 85,  10, 95, 70, 60,  50, 50, 70, 80, 100, 100, 80, 80, 60, 70, 95, 90,
+        55,
+        65,
+        75,
+        85,
+        10,
+        95,
+        70,
+        60,
+        50,
+        50,
+        70,
+        80,
+        100,
+        100,
+        80,
+        80,
+        60,
+        70,
+        95,
+        90,
     ],
     "B": [
-        62, 68, 79, 88,  15, 97, 73, 63,  57, 42, 77, 83, 10, 93, 87, 82, 70, 65, 90, 85,
+        62,
+        68,
+        79,
+        88,
+        15,
+        97,
+        73,
+        63,
+        57,
+        42,
+        77,
+        83,
+        10,
+        93,
+        87,
+        82,
+        70,
+        65,
+        90,
+        85,
     ],
     "C": [
-        62, 45, 78, 90,  55, 43, 23, 67,  89, 62, 34, 56, 20, 90, 70, -90,
+        62,
+        45,
+        78,
+        90,
+        55,
+        43,
+        23,
+        67,
+        89,
+        62,
+        34,
+        56,
+        20,
+        90,
+        70,
+        -90,
     ],
     "D": [
-        70, 81, 40, 20,  50, 60, 60, 60, 50, 40, 50, -60,
+        70,
+        81,
+        40,
+        20,
+        50,
+        60,
+        60,
+        60,
+        50,
+        40,
+        50,
+        -60,
     ],
     "E": [
-        40, 20, 70, 50,  63, 44, 60, -40,
+        40,
+        20,
+        70,
+        50,
+        63,
+        44,
+        60,
+        -40,
     ],
     "F": [
-        30, 50, 30, -30,
+        30,
+        50,
+        30,
+        -30,
     ],
 }
+
 
 def get_color(white: float):
     """
@@ -34,9 +109,10 @@ def get_color(white: float):
     b = int(b1 * (1 - white) + b2 * white)
     return f"#{r:02X}{g:02X}{b:02X}"
 
+
 import matplotlib.pyplot as plt
-import translation_bandit
-import translation_bandit.utils_fig
+import evaluation_bandit
+import evaluation_bandit.utils_fig
 import statistics
 import numpy as np
 
@@ -44,9 +120,17 @@ data_new = {}
 for model, values in data.items():
     values_new = []
     for x_i, x in enumerate(values):
-        values_new.append(abs(x) + np.random.normal(0, 3) + np.random.normal(0, 1) * (x_i / len(values)) * 10)
-        values_new.append(x + np.random.normal(0, 3) + np.random.normal(0, 1) * (x_i / len(values)) * 10)
-        
+        values_new.append(
+            abs(x)
+            + np.random.normal(0, 3)
+            + np.random.normal(0, 1) * (x_i / len(values)) * 10
+        )
+        values_new.append(
+            x
+            + np.random.normal(0, 3)
+            + np.random.normal(0, 1) * (x_i / len(values)) * 10
+        )
+
     data_new[model] = values_new
 
 data = data_new
@@ -54,7 +138,7 @@ data = data_new
 
 plt.figure(figsize=(4, 2.5))
 
-for model, model_values in data.items(): 
+for model, model_values in data.items():
     ys = [
         statistics.mean(model_values[: i + 1])
         for i, v in enumerate(model_values)
@@ -67,15 +151,16 @@ for model, model_values in data.items():
             marker=".",
             color=get_color(0.0 + 0.7 * (i / 40)),
         )
-    
+
     if any(x < 0 for x in model_values):
         plt.plot(
-            [len(model_values)-2, len(model_values) - 1],
-            [statistics.mean([abs(x) for x in model_values[:-1]]),
-             statistics.mean([abs(x) for x in model_values])
+            [len(model_values) - 2, len(model_values) - 1],
+            [
+                statistics.mean([abs(x) for x in model_values[:-1]]),
+                statistics.mean([abs(x) for x in model_values]),
             ],
             marker=None,
-            color=get_color(0.0 + 0.7 * ((len(model_values) -1) / 40)),
+            color=get_color(0.0 + 0.7 * ((len(model_values) - 1) / 40)),
         )
 
         plt.scatter(
@@ -99,7 +184,7 @@ plt.show()
 
 import random
 import matplotlib.pyplot as plt
-import translation_bandit.utils_fig
+import evaluation_bandit.utils_fig
 import numpy as np
 import statistics
 
@@ -118,25 +203,18 @@ ITEMS = np.random.normal(0, 15, 400).tolist()
 EPSILON = 0.5
 
 data = {
-    model: [
-        np.random.normal(MODELS[model], 20)
-        for _ in range(5)
-    ] for model in MODELS.keys()
+    model: [np.random.normal(MODELS[model], 20) for _ in range(5)]
+    for model in MODELS.keys()
 }
 
 
 # simulare epsilon-greedy
 for i in range(5, 150):
     models = list(MODELS.keys())
-    models = [
-        model for model in models if len(data[model]) <= 40
-    ]
+    models = [model for model in models if len(data[model]) <= 40]
     model = random.choices(
         sorted(models, key=lambda m: np.mean(data[m]), reverse=True),
-        weights=[
-            1/(rank + 1)
-            for rank in range(len(models))
-        ],
+        weights=[1 / (rank + 1) for rank in range(len(models))],
         k=1,
     )[0]
     item = ITEMS[len(data[model])]
@@ -146,7 +224,7 @@ for i in range(5, 150):
     # value continues from previous one
     x = len(data[model])
     plt.plot(
-        [x-1, x],
+        [x - 1, x],
         [
             statistics.mean(data[model][:-1]),
             statistics.mean(data[model]),

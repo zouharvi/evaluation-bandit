@@ -1,4 +1,4 @@
-from translation_bandit import simulation, algorithms, utils
+from evaluation_bandit import simulation, algorithms, utils
 import argparse
 import math
 import statistics
@@ -110,8 +110,8 @@ with open(f"computed/simulation_wmt_metrics_{args.method}.json", "w") as f:
 
 
 """
-rsync -azP --filter=":- .gitignore" --exclude .git/ . euler:/cluster/work/sachan/vilem/translation-bandit
-rsync -azP euler:/cluster/work/sachan/vilem/translation-bandit/computed/ ./computed/
+rsync -azP --filter=":- .gitignore" --exclude .git/ . euler:/cluster/work/sachan/vilem/evaluation-bandit
+rsync -azP euler:/cluster/work/sachan/vilem/evaluation-bandit/computed/ ./computed/
 
 function sbatch_cpu() {
     JOB_NAME=$1;

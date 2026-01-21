@@ -3,9 +3,10 @@ import random
 import statistics
 import numpy as np
 import itertools
-from translation_bandit import utils
+from evaluation_bandit import utils
 
 Result = dict[str, float]
+
 
 class Sampler(abc.ABC):
     def __init__(self, models: list[str], K: int = 2):
@@ -51,8 +52,7 @@ class SamplerRandom(Sampler):
     def record_match(self, model1: str, model2: str, result: Result):
         assert result >= 0 and result <= 1
         self.scores[model1].append(result)
-        self.scores[model2].append(1-result)
-
+        self.scores[model2].append(1 - result)
 
 
 class SamplerRandomUniform(SamplerRandom):
@@ -62,15 +62,17 @@ class SamplerRandomUniform(SamplerRandom):
 
     def __init__(self, models: list[str], K: int = 2):
         super().__init__(models, K)
-        self.queue = itertools.cycle((tuple(sorted(pair)) for pair in itertools.combinations(models, 2)))
+        self.queue = itertools.cycle(
+            (tuple(sorted(pair)) for pair in itertools.combinations(models, 2))
+        )
         self.next = next(self.queue)
-        
+
     def match_desireability(self, model1: str, model2: str):
         if (model1, model2) == self.next:
             return 1.0
         else:
             return 0.0
-    
+
     def record_match(self, model1: str, model2: str, result: Result):
         super().record_match(model1, model2, result)
         assert self.next == (model1, model2)
@@ -88,7 +90,6 @@ class SamplerCloseUniform(Sampler):
         super().__init__(models, K)
         self.scores = {model: [] for model in models}
 
-
     def next_match(self) -> list[str]:
         """
         Scan through all K-tuples in sorted models and select the K-tuple with lowest
@@ -96,24 +97,22 @@ class SamplerCloseUniform(Sampler):
         """
         models_sorted = sorted(self.models, key=self.model_skill)
         best_tuple = None
-        min_matches = float('inf')
+        min_matches = float("inf")
         for i in range(len(models_sorted) - self.K + 1):
-            candidate_tuple = tuple(models_sorted[i:i + self.K])
+            candidate_tuple = tuple(models_sorted[i : i + self.K])
             total_matches = sum(len(self.scores[model]) for model in candidate_tuple)
             if total_matches < min_matches:
                 min_matches = total_matches
                 best_tuple = candidate_tuple
 
         return list(best_tuple)
-    
+
     def record_match(self, result: Result):
         for model, score in result.items():
             self.scores[model].append(score)
 
-
     def model_skill(self, model: str) -> float:
         return statistics.mean(self.scores[model]) if self.scores[model] else 0
-    
 
 
 class SamplerCloseCluster(Sampler):
@@ -127,7 +126,6 @@ class SamplerCloseCluster(Sampler):
         super().__init__(models, K)
         self.scores = {model: [] for model in models}
 
-
     def next_match(self) -> list[str]:
         """
         Scan through all K-tuples in sorted models and select the K-tuple with
@@ -136,7 +134,7 @@ class SamplerCloseCluster(Sampler):
         models_sorted = sorted(self.models, key=self.model_skill)
         candidate_tuples = []
         for i in range(len(models_sorted) - self.K + 1):
-            candidate_tuple = tuple(models_sorted[i:i + self.K])
+            candidate_tuple = tuple(models_sorted[i : i + self.K])
             pval = sum(
                 utils.pval(self.scores[a], self.scores[b])
                 for a, b in zip(candidate_tuple, candidate_tuple[1:])
@@ -150,11 +148,10 @@ class SamplerCloseCluster(Sampler):
             print("Warning: No candidate tuples with p-value > 0.05 found.")
             # randomly select a tuple
             return list(itertools.combinations(models_sorted, self.K))
-    
+
     def record_match(self, result: Result):
         for model, score in result.items():
             self.scores[model].append(score)
-
 
     def model_skill(self, model: str) -> float:
         return statistics.mean(self.scores[model]) if self.scores[model] else 0

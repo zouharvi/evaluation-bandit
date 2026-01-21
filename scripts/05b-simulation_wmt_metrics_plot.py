@@ -2,19 +2,49 @@
 
 import json
 
+
 def read_computed(method):
     with open(f"../computed/simulation_wmt_synth_{method}.json", "r") as f:
         return json.load(f)
-    
+
+
 outputs = [
     {"typst": "Uniform", "latex": "Uniform", "internal": "baseline"},
-    {"typst": "Successive rejects", "latex": "Successive rejects", "internal": "successive_rejects_constant"},
-    {"typst": "Sampling rank-based", "latex": "Sampling rank-based", "internal": "stochastic_sampling_ranksmooth"},
-    {"typst": "Sampling $epsilon$-Greedy", "latex": "Sampling $\\epsilon$-Greedy", "internal": "stochastic_sampling_epsilongreedy"},
-    {"typst": "Sampling Bolzmann", "latex": "Sampling Bolzmann", "internal": "stochastic_sampling_bolzmann"},
-    {"typst": "Ambiguity reduction $lambda$=$1$", "latex": "Ambiguity reduction $\\lambda=1$", "internal": "ambiguity_reduction_11"},
-    {"typst": "Ambiguity reduction $lambda$=$0$", "latex": "Ambiguity reduction $\\lambda=0$", "internal": "ambiguity_reduction_01"},
-    {"typst": "Ambiguity reduction $lambda$=$infinity$", "latex": "Ambiguity reduction $\\lambda=\\infty$", "internal": "ambiguity_reduction_10"},
+    {
+        "typst": "Successive rejects",
+        "latex": "Successive rejects",
+        "internal": "successive_rejects_constant",
+    },
+    {
+        "typst": "Sampling rank-based",
+        "latex": "Sampling rank-based",
+        "internal": "stochastic_sampling_ranksmooth",
+    },
+    {
+        "typst": "Sampling $epsilon$-Greedy",
+        "latex": "Sampling $\\epsilon$-Greedy",
+        "internal": "stochastic_sampling_epsilongreedy",
+    },
+    {
+        "typst": "Sampling Bolzmann",
+        "latex": "Sampling Bolzmann",
+        "internal": "stochastic_sampling_bolzmann",
+    },
+    {
+        "typst": "Ambiguity reduction $lambda$=$1$",
+        "latex": "Ambiguity reduction $\\lambda=1$",
+        "internal": "ambiguity_reduction_11",
+    },
+    {
+        "typst": "Ambiguity reduction $lambda$=$0$",
+        "latex": "Ambiguity reduction $\\lambda=0$",
+        "internal": "ambiguity_reduction_01",
+    },
+    {
+        "typst": "Ambiguity reduction $lambda$=$infinity$",
+        "latex": "Ambiguity reduction $\\lambda=\\infty$",
+        "internal": "ambiguity_reduction_10",
+    },
 ]
 
 for output in outputs:
@@ -24,7 +54,7 @@ for output in outputs:
         print(f"Warning: computed file for method {output['internal']} not found.")
 
 
-from translation_bandit import utils_fig
+from evaluation_bandit import utils_fig
 import collections
 import numpy as np
 import matplotlib.pyplot as plt
@@ -72,7 +102,8 @@ for output_i, output in enumerate(outputs):
         output["data"],
         output["latex"],
         axs,
-        color="black" if output["internal"] == "baseline" else f"C{output_i - 1}",)
+        color="black" if output["internal"] == "baseline" else f"C{output_i - 1}",
+    )
 
 for ax in axs:
     ax.spines[["top", "right"]].set_visible(False)
@@ -130,6 +161,7 @@ plt.show()
 
 # area under curve table
 
+
 def area_under_curve(outputs, key):
     data_by_budget = collections.defaultdict(list)
     for output in outputs:
@@ -175,16 +207,23 @@ print(
 )
 print("cmidrule(end: 2),")
 
-outputs_local = [x for x in outputs if not x["internal"].startswith("s2e_") and x["internal"] != "baseline"]
+outputs_local = [
+    x
+    for x in outputs
+    if not x["internal"].startswith("s2e_") and x["internal"] != "baseline"
+]
 for output_i, output in enumerate(outputs_local):
     if output_i == 0:
-        print(f"""
+        print(
+            f"""
 table.cell(
     rowspan: {len(outputs_local)}, 
     align: center,
     rotate(-90deg, reflow: true)[*Model-selection*]
 ),
-""", end="")
+""",
+            end="",
+        )
     print(
         f"[{output['typst']:<37}]",
         *(
@@ -197,16 +236,23 @@ table.cell(
 
 
 print("cmidrule(end: 2),")
-outputs_local = [x for x in outputs if x["internal"].startswith("s2e_") and x["internal"] != "baseline"]
+outputs_local = [
+    x
+    for x in outputs
+    if x["internal"].startswith("s2e_") and x["internal"] != "baseline"
+]
 for output_i, output in enumerate(outputs_local):
     if output_i == 0:
-        print(f"""
+        print(
+            f"""
 table.cell(
     rowspan: {len(outputs_local)}, 
     align: center,
     rotate(-90deg, reflow: true)[*Item-selection*]
 ),
-""", end="")
+""",
+            end="",
+        )
     print(
         f"[{output['typst']:<37}]",
         *(

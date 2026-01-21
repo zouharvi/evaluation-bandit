@@ -59,12 +59,12 @@ plt.show()
 
 # %%
 
-import translation_bandit.utils_fig
-import translation_bandit.utils
+import evaluation_bandit.utils_fig
+import evaluation_bandit.utils
 import matplotlib.pyplot as plt
 import statistics
 
-data_all = translation_bandit.utils.load_data()
+data_all = evaluation_bandit.utils.load_data()
 data_all = [
     [
         statistics.mean([item["scores"][model] for item in data])
@@ -77,9 +77,7 @@ data_all = [
     [100 + 4 * x for x in data] if statistics.mean(data) < 0 else data
     for data in data_all
 ]
-data_all = [
-    x for data in data_all for x in data
-]
+data_all = [x for data in data_all for x in data]
 
 fig, ax = plt.subplots(figsize=(1, 0.3))
 plt.hist(data_all, color="black")
