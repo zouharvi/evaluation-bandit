@@ -13,7 +13,7 @@ def read_computed(fname):
 
 outputs_all = [
     {"name": fname.split("/")[-1].removesuffix(".json"), "data": read_computed(fname)}
-    for fname in glob.glob("../computed/04/*.json")
+    for fname in sorted(glob.glob("../computed/04/*.json"))
 ]
 
 
@@ -44,16 +44,16 @@ def area_under_curve(outputs, key):
 
 
 keys = {
-    "tau": r"Standard $\tau$",
+    # "tau": r"Standard $\tau$",
     "wtau_smooth": r"Weighted $\tau$",
-    "clup": r"Average $p$-value",
+    # "clup": r"Average $p$-value",
     "evalcount_smooth": r"Evaluation focus",
 }
 
 
 for output_i, output in enumerate(outputs_all):
     print(
-        f"{output['name']:<37}",
+        f"{output['name']:<45}",
         *(f"{area_under_curve(output['data'], key)}" for key in keys.keys()),
         sep=", ",
         end=",\n",

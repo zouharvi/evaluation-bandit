@@ -201,16 +201,14 @@ python3 scripts/04a-simulation_compute.py --method uniform --method-sorter senti
 python3 scripts/04a-simulation_compute.py --method uniform --method-sorter precomet_diffdisc --seeds 1
 
 for method in uniform successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-for method_sorter in random metricvar metricavg diversity_bleu diversity_unigram diversity_lm; do
+for method_sorter in random metricvar metricavg diversity_bleu diversity_unigram; do
     sbatch_cpu "simulation_${method}_${method_sorter}" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter $method_sorter --seeds 100 --max-workers 95";
 done
 done
 
-# for method in uniform successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
-
-for method in uniform; do
-    # sbatch_gpu_bigmem "simulation_${method}_cometconfidence" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter cometconfidence --seeds 1 --max-workers 95";
-    sbatch_gpu_bigmem "simulation_${method}_sentinel_mqm" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter sentinel_mqm --seeds 1 --max-workers 95";
-    # sbatch_gpu_bigmem "simulation_${method}_precomet_diffdisc" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter precomet_diffdisc --seeds 1 --max-workers 95";
+for method in uniform successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
+for method_sorter in cometconfidence sentinel_mqm precomet_diffdisc diversity_lm; do
+    sbatch_gpu_bigmem "simulation_${method}_${method_sorter}" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter $method_sorter --seeds 1 --max-workers 95";
+done
 done
 """

@@ -64,12 +64,10 @@ def simulate(
 
     data_all = fn_data_all()
     data_all_len = len(data_all)
+    # compute sorter only once
     data_all = (
         (
-            seed,
             data_name,
-            # this duplicates work across seeds
-            # but isn't an issue since we only run 1 seed for heavy methods
             utils.data_humanscores_only(fn_data_sorter(data)),
             fn,
             fn_kwargs,
@@ -78,8 +76,8 @@ def simulate(
             BUDGETS,
         )
         for data_name, data in data_all.items()
-        for seed in range(seeds)
     )
+    data_all = ((seed, *tpl) for tpl in data_all for seed in range(seeds))
     print("Running simulations")
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         output = [

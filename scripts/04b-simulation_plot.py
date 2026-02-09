@@ -3,74 +3,93 @@
 import json
 
 
-def read_computed(method):
-    with open(f"../computed/simulation_{method}.json", "r") as f:
+def read_computed(method, method_ranker):
+    with open(f"../computed/04/{method}_{method_ranker}.json", "r") as f:
         return json.load(f)
 
 
 outputs = [
-    {"typst": "Uniform", "latex": "Uniform", "internal": "uniform"},
     {
-        "typst": "Successive rejects",
-        "latex": "Successive rejects",
-        "internal": "successive_rejects_constant",
+        "method_typst": "Uniform",
+        "method_latex": "Uniform",
+        "method": "uniform",
     },
     {
-        "typst": "Sampling rank-based",
-        "latex": "Sampling rank-based",
-        "internal": "weighted_sampling_ranksmooth",
+        "method_typst": "Successive rejects",
+        "method_latex": "Successive rejects",
+        "method": "successive_rejects_constant",
     },
     {
-        "typst": "Sampling $epsilon$-Greedy",
-        "latex": "Sampling $\\epsilon$-Greedy",
-        "internal": "weighted_sampling_epsilongreedy",
+        "method_typst": "Sampling rank-based",
+        "method_latex": "Sampling rank-based",
+        "method": "weighted_sampling_ranksmooth",
     },
     {
-        "typst": "Sampling Bolzmann",
-        "latex": "Sampling Bolzmann",
-        "internal": "weighted_sampling_bolzmann",
+        "method_typst": "Sampling $epsilon$-Greedy",
+        "method_latex": "Sampling $\\epsilon$-Greedy",
+        "method": "weighted_sampling_epsilongreedy",
     },
     {
-        "typst": "Upper Confidence Bound",
-        "latex": "Upper Confidence Bound",
-        "internal": "ucb_c50",
+        "method_typst": "Sampling Bolzmann",
+        "method_latex": "Sampling Bolzmann",
+        "method": "weighted_sampling_bolzmann",
     },
     {
-        "typst": "Ambiguity reduction $lambda$=$1$",
-        "latex": "Ambiguity reduction $\\lambda=1$",
-        "internal": "ambiguity_reduction_11",
+        "method_typst": "Upper Confidence Bound",
+        "method_latex": "Upper Confidence Bound",
+        "method": "ucb",
+    },
+    {
+        "method_typst": "Ambiguity reduction $lambda$=$1$",
+        "method_latex": "Ambiguity reduction $\\lambda=1$",
+        "method": "ambiguity_reduction_11",
     },
     # no LaTeX for s2e
     {
-        "typst": "Ambiguity reduction $lambda$=$0$",
-        "latex": None,
-        "internal": "ambiguity_reduction_01",
+        "method_typst": "Ambiguity reduction $lambda$=$0$",
+        "method_latex": None,
+        "method": "ambiguity_reduction_01",
     },
     {
-        "typst": "Ambiguity reduction $lambda$=$infinity$",
-        "latex": None,
-        "internal": "ambiguity_reduction_10",
+        "method_typst": "Ambiguity reduction $lambda$=$infinity$",
+        "method_latex": None,
+        "method": "ambiguity_reduction_10",
     },
-    {"typst": "MetricVar", "latex": None, "internal": "s2e_metricvar"},
-    {"typst": "MetricAvg", "latex": None, "internal": "s2e_metricavg"},
-    {"typst": "MetricCons", "latex": None, "internal": "s2e_metriccons"},
-    {"typst": "$k$-means", "latex": None, "internal": "s2e_kmeans"},
-    {"typst": "DiffUse", "latex": None, "internal": "s2e_diffuse"},
-    {"typst": "Brute Greedy", "latex": None, "internal": "s2e_brute_greedy"},
-    {"typst": "Brute", "latex": None, "internal": "s2e_brute"},
-    {"typst": "Diversity BLEU", "latex": None, "internal": "s2e_diversity_bleu"},
-    {"typst": "Diversity Unigram", "latex": None, "internal": "s2e_diversity_unigram"},
-    {"typst": "Diversity LM", "latex": None, "internal": "s2e_diversity_lm"},
-    {"typst": "Instant confidence", "latex": None, "internal": "s2e_cometconfidence"},
-    {"typst": "Sentinel MQM", "latex": None, "internal": "s2e_sentinel_mqm"},
-    {"typst": "Pre-Comet DiffDisc", "latex": None, "internal": "s2e_precomet_diffdisc"},
+    # {"typst": "MetricVar", "latex": None, "method": "s2e_metricvar"},
+    # {"typst": "MetricAvg", "latex": None, "method": "s2e_metricavg"},
+    # {"typst": "MetricCons", "latex": None, "method": "s2e_metriccons"},
+    # {"typst": "Diversity BLEU", "latex": None, "method": "s2e_diversity_bleu"},
+    # {"typst": "Diversity Unigram", "latex": None, "method": "s2e_diversity_unigram"},
+    # {"typst": "Diversity LM", "latex": None, "method": "s2e_diversity_lm"},
+    # {"typst": "Instant confidence", "latex": None, "method": "s2e_cometconfidence"},
+    # {"typst": "Sentinel MQM", "latex": None, "method": "s2e_sentinel_mqm"},
+    # {"typst": "Pre-Comet DiffDisc", "latex": None, "method": "s2e_precomet_diffdisc"},
+]
+
+outputs = [
+    output | {"method_ranker": method_ranker}
+    for output in outputs
+    for method_ranker in [
+        "random",
+        "metricavg",
+        "metricvar",
+        "metriccons",
+        "diversity_bleu",
+        "diversity_unigram",
+        "diversity_lm",
+        "cometconfidence",
+        "sentinel_mqm",
+        "precomet_diffdisc",
+    ]
 ]
 
 for output in outputs:
     try:
-        output["data"] = read_computed(output["internal"])
+        output["data"] = read_computed(output["method"], output["method_ranker"])
     except FileNotFoundError:
-        print(f"Warning: computed file for method {output['internal']} not found.")
+        print(
+            f"Warning: computed file for method {output['method']}_{output['method_ranker']} not found."
+        )
 
 
 from evaluation_bandit import utils_fig
@@ -91,7 +110,7 @@ def plot_output(outputs, label, axs, color=None):
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
-        ["tau", "wtau_smooth", "clup", "evalcount_smooth"],
+        ["wtau_smooth", "evalcount_smooth"],
     ):
         ax.plot(
             xs,
@@ -111,18 +130,24 @@ def plot_output(outputs, label, axs, color=None):
         )
 
 
-fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(8, 4.5))
-axs = axs.flatten()
+fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(8, 2.5))
+# axs = axs.flatten()
 
-for output_i, output in enumerate(outputs):
-    if output["latex"] is None or "data" not in output:
+output_i = 0
+for output in outputs:
+    if (
+        output["method_latex"] is None
+        or output["method_ranker"] != "random"
+        or "data" not in output
+    ):
         continue
     plot_output(
         output["data"],
-        output["latex"],
+        output["method_latex"],
         axs,
-        color="black" if output["internal"] == "uniform" else f"C{output_i - 1}",
+        color="black" if output["method"] == "uniform" else f"C{output_i - 1}",
     )
+    output_i += 1
 
 for ax in axs:
     ax.spines[["top", "right"]].set_visible(False)
@@ -132,27 +157,11 @@ for ax in axs:
     ax.set_xlim(0.1, 0.9)
 
 
-def format_ax_label(ax, x, y, text):
-    ax.text(
-        x,
-        y,
-        text,
-        transform=ax.transAxes,
-        fontsize=12,
-        verticalalignment="top",
-    )
-
-
-format_ax_label(axs[0], 0.02, 0.90, r"Standard $\tau$ $\uparrow$")
-format_ax_label(axs[1], 0.02, 0.90, r"Weighted $\tau$ $\uparrow$")
-format_ax_label(axs[2], 0.52, 0.90, r"Average $p$-value $\downarrow$")
-format_ax_label(axs[3], 0.52, 0.20, r"Evaluation focus $\uparrow$")
-
-axs[3].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
+axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
+axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 axs[0].set_ylim(0.85, 1.0 + 0.01)
-axs[1].set_ylim(0.85, 1.0 + 0.01)
-axs[2].set_ylim(None, 0.55)
-axs[3].set_ylim(0.25, None)
+axs[0].set_ylabel(r"Weighted $\tau$", labelpad=-5)
+axs[1].set_ylabel("\nEvaluation focus", labelpad=-5)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
@@ -213,72 +222,13 @@ keys = {
 }
 
 outputs = [x for x in outputs if "data" in x]
-
-output = outputs[0]
-print(
-    "[]",
-    f"[{output['typst']:<37}]",
-    *(
-        f'cell{cell_i + 1}("{area_under_curve(output["data"], key)}")'
-        for cell_i, key in enumerate(keys.keys())
-    ),
-    sep=", ",
-    end=",\n",
-)
-print("cmidrule(end: 2),")
-
-outputs_local = [
-    x
-    for x in outputs
-    if not x["internal"].startswith("s2e_") and x["internal"] != "uniform"
+outputs = [
+    {
+        "method": output["method_typst"],
+        "method_ranker": output["method_ranker"],
+        **{key: area_under_curve(output["data"], key) for key in keys.keys()},
+    }
+    for output in outputs
 ]
-for output_i, output in enumerate(outputs_local):
-    if output_i == 0:
-        print(
-            f"""
-table.cell(
-    rowspan: {len(outputs_local)}, 
-    align: center,
-    rotate(-90deg, reflow: true)[*Model-selection*]
-),
-""",
-            end="",
-        )
-    print(
-        f"[{output['typst']:<37}]",
-        *(
-            f'cell{cell_i + 1}("{area_under_curve(output["data"], key)}")'
-            for cell_i, key in enumerate(keys.keys())
-        ),
-        sep=", ",
-        end=",\n",
-    )
-
-
-print("cmidrule(end: 2),")
-outputs_local = [
-    x
-    for x in outputs
-    if x["internal"].startswith("s2e_") and x["internal"] != "baseline"
-]
-for output_i, output in enumerate(outputs_local):
-    if output_i == 0:
-        print(
-            f"""
-table.cell(
-    rowspan: {len(outputs_local)}, 
-    align: center,
-    rotate(-90deg, reflow: true)[*Item-selection*]
-),
-""",
-            end="",
-        )
-    print(
-        f"[{output['typst']:<37}]",
-        *(
-            f'cell{cell_i + 1}("{area_under_curve(output["data"], key)}")'
-            for cell_i, key in enumerate(keys.keys())
-        ),
-        sep=", ",
-        end=",\n",
-    )
+with open("../figures/simulation.json", "w") as f:
+    json.dump(outputs, f, indent=2)
