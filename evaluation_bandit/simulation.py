@@ -3,6 +3,7 @@ from typing import Callable
 from evaluation_bandit import utils
 import numpy as np
 import concurrent.futures
+import tqdm
 
 BUDGETS = np.linspace(0.1, 0.9, 20, dtype=float)
 
@@ -61,10 +62,14 @@ def simulate(
 ):
     print("Running", fn.__name__, "with", fn_kwargs)
 
-    data_all = [
+    data_all = fn_data_all()
+    data_all_len = len(data_all)
+    data_all = (
         (
             seed,
             data_name,
+            # this duplicates work across seeds
+            # but isn't an issue since we only run 1 seed for heavy methods
             utils.data_humanscores_only(fn_data_sorter(data)),
             fn,
             fn_kwargs,
@@ -72,11 +77,18 @@ def simulate(
             ranking_only,
             BUDGETS,
         )
-        for data_name, data in fn_data_all().items()
+        for data_name, data in data_all.items()
         for seed in range(seeds)
-    ]
+    )
+    print("Running simulations")
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        output = [item for list in executor.map(_simulate, data_all) for item in list]
+        output = [
+            item
+            for list in tqdm.tqdm(
+                executor.map(_simulate, data_all), total=data_all_len * seeds
+            )
+            for item in list
+        ]
 
     # aggregate across seeds
     data_agg = collections.defaultdict(list)
@@ -111,16 +123,21 @@ def subset2evaluate_to_sorter(**fn_kwargs):
         # make sure MetricX-25 is present everywhere
         for line in data:
             for model_v in line["scores"].values():
-                model_v["MetricX-25"] = model_v.get("MetricX-25", 0)
+                x = 0
+                for metric in ["MetricX-25", "MetricX-24", "MetricX-23", "chrF"]:
+                    if metric in model_v:
+                        x = model_v[metric]
+                        break
+                model_v["metric"] = x
 
-        data = subset2evaluate.select_subset.basic(data, **fn_kwargs)
+        data = subset2evaluate.select_subset.basic(list(data), **fn_kwargs)
 
         data_by_domain = collections.defaultdict(list)
         for item in data:
             data_by_domain[item["domain"]].append(item)
-        data_new = []
 
         # interleave domains
+        data_new = []
         while data_by_domain:
             for domain in list(data_by_domain.keys()):
                 data_new.append(data_by_domain[domain].pop(0))

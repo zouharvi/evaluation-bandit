@@ -228,7 +228,8 @@ def data_humanscores_only(
 
 def load_data(
     require_human_scores=True,
-    wmt_years={"wmt25", "wmt24", "wmt23", "wmt23.sent"},
+    # wmt_years={"wmt25", "wmt24", "wmt23", "wmt23.sent"},
+    wmt_years={"wmt25", "wmt24"},
 ) -> dict[str, list[dict]]:
     import subset2evaluate.utils
 

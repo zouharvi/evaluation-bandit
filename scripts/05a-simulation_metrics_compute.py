@@ -37,7 +37,7 @@ elif args.method == "successive_rejects_constant":
         seeds=args.seeds,
         fn_data_all=utils.load_data_bymetrics,
     )
-elif args.method == "stochastic_sampling_ranksmooth":
+elif args.method == "weighted_sampling_ranksmooth":
 
     def sampling_fn_ranksmooth(ys, rank, total):
         return 1 / (rank + 1)
@@ -49,7 +49,7 @@ elif args.method == "stochastic_sampling_ranksmooth":
         seeds=args.seeds,
         fn_data_all=utils.load_data_bymetrics,
     )
-elif args.method == "stochastic_sampling_bolzmann":
+elif args.method == "weighted_sampling_bolzmann":
 
     def sampling_fn_bolzmann(ys, rank, total, temperature=10):
         return math.exp(statistics.mean(ys) / temperature)
@@ -61,7 +61,7 @@ elif args.method == "stochastic_sampling_bolzmann":
         seeds=args.seeds,
         fn_data_all=utils.load_data_bymetrics,
     )
-elif args.method == "stochastic_sampling_epsilongreedy":
+elif args.method == "weighted_sampling_epsilongreedy":
 
     def sampling_fn_epsilongreedy(ys, rank, total, epsilon=0.5):
         if rank == 0:
@@ -130,8 +130,8 @@ function sbatch_cpu() {
         --wrap="$JOB_WRAP";
 }
 
-# for method in baseline successive_rejects_constant stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-for method in stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-    sbatch_cpu "sim_wmt_metrics_$method" "python3 scripts/05b-simulation_metrics_compute.py --method $method"
+# for method in baseline successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
+for method in weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
+    sbatch_cpu "simulation_metrics_$method" "python3 scripts/05b-simulation_metrics_compute.py --method $method"
 done
 """

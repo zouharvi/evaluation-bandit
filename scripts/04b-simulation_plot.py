@@ -18,17 +18,17 @@ outputs = [
     {
         "typst": "Sampling rank-based",
         "latex": "Sampling rank-based",
-        "internal": "stochastic_sampling_ranksmooth",
+        "internal": "weighted_sampling_ranksmooth",
     },
     {
         "typst": "Sampling $epsilon$-Greedy",
         "latex": "Sampling $\\epsilon$-Greedy",
-        "internal": "stochastic_sampling_epsilongreedy",
+        "internal": "weighted_sampling_epsilongreedy",
     },
     {
         "typst": "Sampling Bolzmann",
         "latex": "Sampling Bolzmann",
-        "internal": "stochastic_sampling_bolzmann",
+        "internal": "weighted_sampling_bolzmann",
     },
     {
         "typst": "Upper Confidence Bound",

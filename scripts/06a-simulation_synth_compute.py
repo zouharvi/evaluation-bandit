@@ -38,7 +38,7 @@ elif args.method == "successive_rejects_constant":
         fn=algorithms.successive_rejects,
         fn_kwargs=dict(phases="constant"),
     )
-elif args.method == "stochastic_sampling_ranksmooth":
+elif args.method == "weighted_sampling_ranksmooth":
 
     def sampling_fn_ranksmooth(ys, rank, total):
         return 1 / (rank + 1)
@@ -48,7 +48,7 @@ elif args.method == "stochastic_sampling_ranksmooth":
         fn_kwargs=dict(sampling_fn=sampling_fn_ranksmooth),
         accepts_budgets=True,
     )
-elif args.method == "stochastic_sampling_bolzmann":
+elif args.method == "weighted_sampling_bolzmann":
 
     def sampling_fn_bolzmann(ys, rank, total, temperature=1):
         return math.exp(statistics.mean(ys) / temperature)
@@ -58,7 +58,7 @@ elif args.method == "stochastic_sampling_bolzmann":
         fn_kwargs=dict(sampling_fn=sampling_fn_bolzmann),
         accepts_budgets=True,
     )
-elif args.method == "stochastic_sampling_epsilongreedy":
+elif args.method == "weighted_sampling_epsilongreedy":
 
     def sampling_fn_epsilongreedy(ys, rank, total, epsilon=0.5):
         if rank == 0:
@@ -138,7 +138,7 @@ function sbatch_gpu() {
 }
 
 
-for method in baseline successive_rejects_constant stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-    sbatch_cpu "sim_wmt_$method" "python3 scripts/06a-simulation_synth_compute.py --method $method --seeds 10"
+for method in baseline successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
+    sbatch_cpu "simulation_$method" "python3 scripts/06a-simulation_synth_compute.py --method $method --seeds 10"
 done
 """

@@ -7,9 +7,7 @@ importlib.reload(algorithms)
 importlib.reload(utils)
 import numpy as np
 
-# ['cs-de_DE', 'cs-uk_UA', 'en-ar_EG', 'en-bho_IN', 'en-cs_CZ', 'en-et_EE', 'en-is_IS', 'en-it_IT', 'en-ja_JP', 'en-ko_KR', 'en-mas_KE', 'en-ru_RU', 'en-sr_Cyrl_RS', 'en-uk_UA', 'en-zh_CN', 'ja-zh_CN'])
-
-data = utils.load_data_single(langs="en-cs_CZ")
+data = utils.load_data()
 for item in data:
     for i in range(0):
         item["scores"] |= {
@@ -37,7 +35,7 @@ for budget in budgets():
 
 print()
 for budget in budgets():
-    model_scores = algorithms.successive_rejects(data, budget, _phases="constant")
+    model_scores = algorithms.successive_rejects(data, budget, phases="constant")
     print(
         f"Budget: {budget:>4}",
         f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
@@ -47,7 +45,7 @@ for budget in budgets():
 
 print()
 for budget in budgets():
-    model_scores = algorithms.successive_rejects(data, budget, _phases="prioritize_all")
+    model_scores = algorithms.successive_rejects(data, budget, phases="prioritize_all")
     print(
         f"Budget: {budget:>4}",
         f"Tau:  {utils.tau(model_scores, model_scores_true):.3f} ",
