@@ -1,4 +1,4 @@
-from evaluation_bandit import simulation, algorithms, utils
+from evaluation_bandit import simulation, algorithms
 import argparse
 import math
 import statistics
@@ -12,27 +12,74 @@ args.add_argument(
     required=True,
 )
 args.add_argument(
+    "--method-sorter",
+    type=str,
+    default="random",
+)
+args.add_argument(
     "--seeds",
     type=int,
     default=100,
 )
 args = args.parse_args()
 
-if args.method == "baseline":
+if args.method_sorter == "random":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(method="random")
+elif args.method_sorter == "metricvar":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="metric_var", metric="MetricX-25"
+    )
+elif args.method_sorter == "metricavg":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="metric_avg", metric="MetricX-25"
+    )
+elif args.method_sorter == "metriccons":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="metric_cons", metric="MetricX-25"
+    )
+elif args.method_sorter == "diversity_bleu":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="diversity", metric="BLEU"
+    )
+elif args.method_sorter == "diversity_unigram":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="diversity", metric="unigram"
+    )
+elif args.method_sorter == "diversity_lm":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="diversity", metric="lm"
+    )
+elif args.method_sorter == "cometconfidence":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="comet_instant_confidence"
+    )
+elif args.method_sorter == "sentinel_mqm":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(method="sentinel_src_mqm")
+elif args.method_sorter == "precomet_diffdisc":
+    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+        method="precomet_diffdisc_direct"
+    )
+else:
+    raise ValueError(f"Unknown method_sorter: {args.method_sorter}")
+
+if args.method == "uniform":
     output = simulation.simulate(
         fn=algorithms.uniform,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
-elif args.method == "baseline_nonsquare":
+elif args.method == "uniform_nonsquare":
     output = simulation.simulate(
         fn=algorithms.uniform_random,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "successive_rejects_constant":
     output = simulation.simulate(
         fn=algorithms.successive_rejects,
         fn_kwargs=dict(phases="constant"),
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "stochastic_sampling_ranksmooth":
 
@@ -44,6 +91,7 @@ elif args.method == "stochastic_sampling_ranksmooth":
         fn_kwargs=dict(sampling_fn=sampling_fn_ranksmooth),
         accepts_budgets=True,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "stochastic_sampling_bolzmann":
 
@@ -55,6 +103,7 @@ elif args.method == "stochastic_sampling_bolzmann":
         fn_kwargs=dict(sampling_fn=sampling_fn_bolzmann),
         accepts_budgets=True,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "stochastic_sampling_epsilongreedy":
 
@@ -69,6 +118,7 @@ elif args.method == "stochastic_sampling_epsilongreedy":
         fn_kwargs=dict(sampling_fn=sampling_fn_epsilongreedy),
         accepts_budgets=True,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "ucb":
     output = simulation.simulate(
@@ -76,6 +126,7 @@ elif args.method == "ucb":
         fn_kwargs=dict(topk=3, c=50),
         accepts_budgets=True,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "ambiguity_reduction_11":
     output = simulation.simulate(
@@ -83,6 +134,7 @@ elif args.method == "ambiguity_reduction_11":
         fn_kwargs=dict(weight_pointwise=1, weight_pairwise=1),
         accepts_budgets=True,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "ambiguity_reduction_01":
     output = simulation.simulate(
@@ -90,6 +142,7 @@ elif args.method == "ambiguity_reduction_01":
         fn_kwargs=dict(weight_pointwise=0, weight_pairwise=1),
         accepts_budgets=True,
         seeds=args.seeds,
+        fn_data_sorter=fn_data_sorter,
     )
 elif args.method == "ambiguity_reduction_10":
     output = simulation.simulate(
@@ -97,73 +150,7 @@ elif args.method == "ambiguity_reduction_10":
         fn_kwargs=dict(weight_pointwise=1, weight_pairwise=0),
         accepts_budgets=True,
         seeds=args.seeds,
-    )
-elif args.method == "s2e_baseline":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="random"),
-        seeds=args.seeds,
-    )
-elif args.method == "s2e_metricvar":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="metric_var", metric="MetricX-25"),
-    )
-elif args.method == "s2e_metricavg":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="metric_avg", metric="MetricX-25"),
-    )
-elif args.method == "s2e_metriccons":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="metric_cons", metric="MetricX-25"),
-    )
-elif args.method == "s2e_diversity_bleu":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="diversity", metric="BLEU"),
-    )
-elif args.method == "s2e_diversity_unigram":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="diversity", metric="unigram"),
-    )
-elif args.method == "s2e_diversity_lm":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="diversity", metric="lm"),
-        max_workers=1,
-    )
-elif args.method == "s2e_random":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="random"),
-    )
-elif args.method == "s2e_cometconfidence":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="comet_instant_confidence"),
-        max_workers=1,
-    )
-elif args.method == "s2e_sentinel_mqm":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="sentinel_src_mqm"),
-        max_workers=1,
-    )
-elif args.method == "s2e_precomet_diffdisc":
-    output = simulation.simulate_subset2evaluate(
-        fn_kwargs=dict(method="precomet_diffdisc_direct"),
-        max_workers=1,
-    )
-elif args.method == "s2e_diffuse":
-    output = simulation.simulate_subset2evaluate_perbudget(
-        fn_kwargs=dict(method="diffuse"),
-        max_workers=2,
-    )
-elif args.method == "s2e_kmeans":
-    output = simulation.simulate_subset2evaluate_perbudget(
-        fn_kwargs=dict(method="kmeans", features="src"),
-        max_workers=1,
-    )
-elif args.method == "s2e_brute_greedy":
-    output = simulation.simulate_subset2evaluate_perbudget(
-        fn_kwargs=dict(method="bruteforce_greedy", metric="MetricX-25"),
-    )
-elif args.method == "s2e_brute":
-    output = simulation.simulate_subset2evaluate_perbudget(
-        fn_kwargs=dict(method="bruteforce", metric="MetricX-25"),
+        fn_data_sorter=fn_data_sorter,
     )
 else:
     raise ValueError(f"Unknown method: {args.method}")

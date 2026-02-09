@@ -15,7 +15,6 @@ def uniform(data, budget) -> utils.ModelScores:
 def uniform_random(data, budget) -> utils.ModelScores:
     # shallow copy
     data = list(data)
-    random.shuffle(data)
     models = list(data[0]["scores"].keys())
     model_scores = {model: [] for model in models}
     cost = 0
@@ -41,7 +40,6 @@ def successive_rejects(
 ) -> utils.ModelScores:
     # shallow copy
     data = list(data)
-    random.shuffle(data)
     models = list(data[0]["scores"])
     if phases == "constant":
         _phases: Any = [
@@ -124,7 +122,6 @@ def weighted_sampling(
     Rank-based epsilon-greedy approach
     """
     data = list(data)
-    random.shuffle(data)
     model_index = {model: 0 for model in data[0]["scores"]}
     model_scores = {model: [] for model in data[0]["scores"]}
     models = list(data[0]["scores"])
@@ -176,7 +173,6 @@ def statistical_ambiguity_reduction(
     weight_pairwise=1,
 ) -> list[utils.ModelScores]:
     data = list(data)
-    random.shuffle(data)
     models = [
         {
             "model": model,
@@ -273,7 +269,6 @@ def upper_confidence_bound(
     """
     # Initialize data and models
     data = list(data)
-    random.shuffle(data)
     models = list(data[0]["scores"].keys())
 
     # Track scores and counts for each model
