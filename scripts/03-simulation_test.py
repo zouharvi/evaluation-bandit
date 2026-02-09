@@ -20,9 +20,11 @@ for item in data:
 model_scores_true = {
     model: [item["scores"][model] for item in data] for model in data[0]["scores"]
 }
-budgets = lambda: np.linspace(
-    200, int(len(data) * len(data[0]["scores"]) * 0.5), 5, dtype=int
-)
+
+
+def budgets():
+    return np.linspace(200, int(len(data) * len(data[0]["scores"]) * 0.5), 5, dtype=int)
+
 
 for budget in budgets():
     model_scores = algorithms.uniform(data, budget)

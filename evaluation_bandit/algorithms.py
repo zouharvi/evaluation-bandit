@@ -62,7 +62,6 @@ def successive_rejects(
         _phases += [0.2] * len(_phases)
         # normalize to sum to budget
         total = sum(_phases)
-        # TODO: missing number of models
         _phases = [math.ceil(budget * (p / total) / (len(models) - 2)) for p in _phases]
     else:
         raise ValueError("Other (e.g. more dynamic) phase lengths not implemented yet.")

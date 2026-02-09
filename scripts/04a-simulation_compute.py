@@ -156,8 +156,8 @@ else:
     raise ValueError(f"Unknown method: {args.method}")
 
 
-os.makedirs("computed/", exist_ok=True)
-with open(f"computed/simulation_wmt_{args.method}.json", "w") as f:
+os.makedirs("computed/04/", exist_ok=True)
+with open(f"computed/04/{args.method}_{args.method_sorter}.json", "w") as f:
     json.dump(output, f)
 
 
@@ -202,19 +202,19 @@ function sbatch_gpu() {
 
 
 for method in baseline successive_rejects_constant stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-    sbatch_cpu "sim_wmt_$method" "python3 scripts/04a-simulation_wmt_compute.py --method $method"
+    sbatch_cpu "sim_wmt_$method" "python3 scripts/04a-simulation_compute.py --method $method"
 done
 
 for method in s2e_metricvar s2e_metricavg s2e_metriccons s2e_diversity_bleu s2e_diversity_unigram; do
-    sbatch_cpu "sim_wmt_$method" "python3 scripts/04a-simulation_wmt_compute.py --method $method"
+    sbatch_cpu "sim_wmt_$method" "python3 scripts/04a-simulation_compute.py --method $method"
 done
 
 for method in s2e_diversity_lm  s2e_sentinel_mqm s2e_precomet_diffdisc; do
-    sbatch_gpu "sim_wmt_$method" "python3 scripts/04a-simulation_wmt_compute.py --method $method"
+    sbatch_gpu "sim_wmt_$method" "python3 scripts/04a-simulation_compute.py --method $method"
 done
 
 for method in s2e_kmeans s2e_diffuse s2e_brute_greedy s2e_brute; do
-    sbatch_gpu "sim_wmt_$method" "python3 scripts/04a-simulation_wmt_compute.py --method $method"
+    sbatch_gpu "sim_wmt_$method" "python3 scripts/04a-simulation_compute.py --method $method"
 done
 
 
@@ -236,8 +236,11 @@ function sbatch_gpu_bigmem() {
         --wrap="$JOB_WRAP";
 }
 method=s2e_diffuse
-sbatch_gpu_bigmem "sim_wmt_$method" "python3 scripts/04a-simulation_wmt_compute.py --method $method"
+sbatch_gpu_bigmem "sim_wmt_$method" "python3 scripts/04a-simulation_compute.py --method $method"
 
 method=s2e_cometconfidence
-sbatch_gpu_bigmem "sim_wmt_$method" "python3 scripts/04a-simulation_wmt_compute.py --method $method"
+sbatch_gpu_bigmem "sim_wmt_$method" "python3 scripts/04a-simulation_compute.py --method $method"
+
+python3 scripts/04a-simulation_compute.py --method uniform --method-sorter random --seeds 10
+python3 scripts/04a-simulation_compute.py --method uniform --method-sorter metricvar --seeds 1
 """

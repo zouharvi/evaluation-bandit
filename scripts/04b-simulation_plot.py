@@ -4,12 +4,12 @@ import json
 
 
 def read_computed(method):
-    with open(f"../computed/simulation_wmt_synth_{method}.json", "r") as f:
+    with open(f"../computed/simulation_{method}.json", "r") as f:
         return json.load(f)
 
 
 outputs = [
-    {"typst": "Uniform", "latex": "Uniform", "internal": "baseline"},
+    {"typst": "Uniform", "latex": "Uniform", "internal": "uniform"},
     {
         "typst": "Successive rejects",
         "latex": "Successive rejects",
@@ -31,20 +31,39 @@ outputs = [
         "internal": "stochastic_sampling_bolzmann",
     },
     {
+        "typst": "Upper Confidence Bound",
+        "latex": "Upper Confidence Bound",
+        "internal": "ucb_c50",
+    },
+    {
         "typst": "Ambiguity reduction $lambda$=$1$",
         "latex": "Ambiguity reduction $\\lambda=1$",
         "internal": "ambiguity_reduction_11",
     },
+    # no LaTeX for s2e
     {
         "typst": "Ambiguity reduction $lambda$=$0$",
-        "latex": "Ambiguity reduction $\\lambda=0$",
+        "latex": None,
         "internal": "ambiguity_reduction_01",
     },
     {
         "typst": "Ambiguity reduction $lambda$=$infinity$",
-        "latex": "Ambiguity reduction $\\lambda=\\infty$",
+        "latex": None,
         "internal": "ambiguity_reduction_10",
     },
+    {"typst": "MetricVar", "latex": None, "internal": "s2e_metricvar"},
+    {"typst": "MetricAvg", "latex": None, "internal": "s2e_metricavg"},
+    {"typst": "MetricCons", "latex": None, "internal": "s2e_metriccons"},
+    {"typst": "$k$-means", "latex": None, "internal": "s2e_kmeans"},
+    {"typst": "DiffUse", "latex": None, "internal": "s2e_diffuse"},
+    {"typst": "Brute Greedy", "latex": None, "internal": "s2e_brute_greedy"},
+    {"typst": "Brute", "latex": None, "internal": "s2e_brute"},
+    {"typst": "Diversity BLEU", "latex": None, "internal": "s2e_diversity_bleu"},
+    {"typst": "Diversity Unigram", "latex": None, "internal": "s2e_diversity_unigram"},
+    {"typst": "Diversity LM", "latex": None, "internal": "s2e_diversity_lm"},
+    {"typst": "Instant confidence", "latex": None, "internal": "s2e_cometconfidence"},
+    {"typst": "Sentinel MQM", "latex": None, "internal": "s2e_sentinel_mqm"},
+    {"typst": "Pre-Comet DiffDisc", "latex": None, "internal": "s2e_precomet_diffdisc"},
 ]
 
 for output in outputs:
@@ -80,7 +99,7 @@ def plot_output(outputs, label, axs, color=None):
             label=label,
             color=color,
             linewidth=2.0,
-            zorder=2 if label == "Random" else 1,
+            zorder=2 if label == "Uniform" else 1,
         )
         ax.fill_between(
             xs,
@@ -102,7 +121,7 @@ for output_i, output in enumerate(outputs):
         output["data"],
         output["latex"],
         axs,
-        color="black" if output["internal"] == "baseline" else f"C{output_i - 1}",
+        color="black" if output["internal"] == "uniform" else f"C{output_i - 1}",
     )
 
 for ax in axs:
@@ -132,11 +151,12 @@ format_ax_label(axs[3], 0.52, 0.20, r"Evaluation focus $\uparrow$")
 axs[3].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 axs[0].set_ylim(0.85, 1.0 + 0.01)
 axs[1].set_ylim(0.85, 1.0 + 0.01)
-axs[2].set_ylim(None, 0.6)
+axs[2].set_ylim(None, 0.55)
+axs[3].set_ylim(0.25, None)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
-plt.savefig("../figures/simulation_wmt_metrics.svg")
+plt.savefig("../figures/simulation.svg")
 plt.show()
 
 
@@ -155,7 +175,7 @@ fig_legend.legend(
 )
 fig_legend.tight_layout(pad=0)
 plt.axis("off")
-plt.savefig("../figures/simulation_wmt_metrics_legend.svg")
+plt.savefig("../figures/simulation_legend.svg")
 plt.show()
 
 
@@ -210,7 +230,7 @@ print("cmidrule(end: 2),")
 outputs_local = [
     x
     for x in outputs
-    if not x["internal"].startswith("s2e_") and x["internal"] != "baseline"
+    if not x["internal"].startswith("s2e_") and x["internal"] != "uniform"
 ]
 for output_i, output in enumerate(outputs_local):
     if output_i == 0:

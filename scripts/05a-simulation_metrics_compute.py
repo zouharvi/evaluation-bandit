@@ -105,7 +105,7 @@ else:
 
 
 os.makedirs("computed/", exist_ok=True)
-with open(f"computed/simulation_wmt_metrics_{args.method}.json", "w") as f:
+with open(f"computed/simulation_metrics_{args.method}.json", "w") as f:
     json.dump(output, f)
 
 
@@ -132,6 +132,6 @@ function sbatch_cpu() {
 
 # for method in baseline successive_rejects_constant stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
 for method in stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-    sbatch_cpu "sim_wmt_metrics_$method" "python3 scripts/05b-simulation_wmt_metrics_compute.py --method $method"
+    sbatch_cpu "sim_wmt_metrics_$method" "python3 scripts/05b-simulation_metrics_compute.py --method $method"
 done
 """

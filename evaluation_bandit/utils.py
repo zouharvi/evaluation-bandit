@@ -43,9 +43,7 @@ def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         variant="b",
-    )[
-        0
-    ]  # type: ignore
+    )[0]  # type: ignore
     if np.isnan(val):
         return 0.0
     return val
@@ -59,9 +57,7 @@ def wtau_smooth(model_scores1: ModelScores, model_scores2: ModelScores) -> float
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         weigher=lambda rank: 1 / (rank + 1),
-    )[
-        0
-    ]  # type: ignore
+    )[0]  # type: ignore
     if np.isnan(val):
         return 0.0
     return val
@@ -75,9 +71,7 @@ def wtau_top(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
         weigher=lambda rank: (1 if rank <= 2 else 0.5 if rank <= 5 else 0.001),
-    )[
-        0
-    ]  # type: ignore
+    )[0]  # type: ignore
     if np.isnan(val):
         return 0.0
     return val
@@ -214,42 +208,46 @@ def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
     }
 
 
+def data_humanscores_only(
+    data: list[dict] | dict[str, list[dict]],
+) -> list[dict] | dict[str, list[dict]]:
+    if isinstance(data, dict):
+        return {k: data_humanscores_only(v) for k, v in data.items()}
+    return [
+        item
+        | (
+            {
+                "scores": {
+                    model: model_v["human"] for model, model_v in item["scores"].items()
+                }
+            }
+        )
+        for item in data
+    ]
+
+
 def load_data(
-    human_scores_only=True,
     require_human_scores=True,
     wmt_years={"wmt25", "wmt24", "wmt23", "wmt23.sent"},
 ) -> dict[str, list[dict]]:
     import subset2evaluate.utils
 
-    data = subset2evaluate.utils.load_data_wmt_all(normalize=False, require_human=require_human_scores)
-    data = {
-        f"{k[0]}_{k[1]}": [
-            item
-            | (
-                {
-                    "scores": {
-                        model: model_v["human"]
-                        for model, model_v in item["scores"].items()
-                    }
-                }
-                if human_scores_only
-                else {}
-            )
-            for item in v
-        ]
-        for k, v in data.items()
-        if k[0] in wmt_years
-    }
+    data = subset2evaluate.utils.load_data_wmt_all(
+        normalize=False,
+        require_human=require_human_scores,
+        name_filter=lambda x: x[0] in wmt_years,
+    )
 
     return data
+
 
 def load_data_synth(seed=0, num_models=40, **kwargs) -> dict[str, list[dict]]:
     import random
 
     r_local = random.Random(seed)
-    data_all = load_data(human_scores_only=True, **kwargs)
+    data_all = data_humanscores_only(load_data(**kwargs))
     for data in data_all.values():
-        for i in range(num_models-len(data[0]["scores"])):
+        for i in range(num_models - len(data[0]["scores"])):
             model_name = f"synth_model_{i}"
             model = r_local.choice(list(data[0]["scores"].keys()))
             offset = r_local.uniform(-1, -10)
@@ -259,12 +257,13 @@ def load_data_synth(seed=0, num_models=40, **kwargs) -> dict[str, list[dict]]:
 
 
 def load_data_bymetrics() -> dict[str, list[dict]]:
-    data_all = load_data(human_scores_only=False, require_human_scores=False)
+    data_all = load_data(require_human_scores=False)
     data_out = {}
     for data_name, data in data_all.items():
         for metric in list(data[0]["scores"].values())[0].keys():
             data_new = [
-                item | {
+                item
+                | {
                     "scores": {
                         model: model_v[metric] if metric in model_v else None
                         for model, model_v in item["scores"].items()
@@ -291,15 +290,13 @@ def load_data_bymetrics() -> dict[str, list[dict]]:
             data_new = [
                 item
                 for item in data_new
-                if all(
-                    model_v is not None
-                    for model_v in item["scores"].values()
-                )
+                if all(model_v is not None for model_v in item["scores"].values())
             ]
             if len(data_new) <= 100:
                 continue
             data_out[f"{data_name}_{metric}"] = data_new
     return data_out
+
 
 def load_data_bydomains() -> dict[str, list[dict]]:
     import subset2evaluate.utils

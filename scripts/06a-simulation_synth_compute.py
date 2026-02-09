@@ -94,7 +94,7 @@ else:
 
 
 os.makedirs("computed/", exist_ok=True)
-with open(f"computed/simulation_wmt_synth_{args.method}.json", "w") as f:
+with open(f"computed/simulation_synth_{args.method}.json", "w") as f:
     json.dump(output, f)
 
 
@@ -139,6 +139,6 @@ function sbatch_gpu() {
 
 
 for method in baseline successive_rejects_constant stochastic_sampling_ranksmooth stochastic_sampling_bolzmann stochastic_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-    sbatch_cpu "sim_wmt_$method" "python3 scripts/06a-simulation_wmt_synth_compute.py --method $method --seeds 10"
+    sbatch_cpu "sim_wmt_$method" "python3 scripts/06a-simulation_synth_compute.py --method $method --seeds 10"
 done
 """
