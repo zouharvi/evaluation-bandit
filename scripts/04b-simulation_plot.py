@@ -12,7 +12,7 @@ outputs = [
     {
         "method_typst": "Uniform",
         "method_latex": "Uniform",
-        "method": "uniform",
+        "method": "uniform_nonsquare",
     },
     {
         "method_typst": "Successive rejects",
@@ -20,9 +20,14 @@ outputs = [
         "method": "successive_rejects_constant",
     },
     {
-        "method_typst": "Sampling rank-based",
-        "method_latex": "Sampling rank-based",
+        "method_typst": "Sampling rank",
+        "method_latex": "Sampling rank",
         "method": "weighted_sampling_ranksmooth",
+    },
+    {
+        "method_typst": "Sampling rank-sqrt",
+        "method_latex": "Sampling rank-sqrt",
+        "method": "weighted_sampling_ranksqrt",
     },
     {
         "method_typst": "Sampling $epsilon$-Greedy",
@@ -110,7 +115,7 @@ def plot_output(outputs, label, axs, color=None):
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
-        ["wtau_smooth", "evalcount_smooth"],
+        ["wtau_smooth", "evalcount_log"],
     ):
         ax.plot(
             xs,
@@ -145,7 +150,9 @@ for output in outputs:
         output["data"],
         output["method_latex"],
         axs,
-        color="black" if output["method"] == "uniform" else f"C{output_i - 1}",
+        color="black"
+        if output["method"] == "uniform_nonsquare"
+        else f"C{output_i - 1}",
     )
     output_i += 1
 
@@ -154,14 +161,15 @@ for ax in axs:
     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.2f}"))  # type: ignore
     ax.set_xlabel("Budget proportion")
-    ax.set_xlim(0.1, 0.9)
+    ax.set_xlim(0.1, 1.0)
 
 
 axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[0].set_ylim(0.85, 1.0 + 0.01)
+# axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
+axs[0].set_ylim(0.83, 1.0 + 0.01)
+axs[1].set_ylim(6.5, None)
 axs[0].set_ylabel(r"Weighted $\tau$", labelpad=-5)
-axs[1].set_ylabel("\nEvaluation focus", labelpad=-5)
+axs[1].set_ylabel("\nEvaluation focus", labelpad=-1)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
@@ -208,17 +216,17 @@ def area_under_curve(outputs, key):
             for xs in data_by_budget
             if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 0.9
         ],
-    ) / (0.9 - 0.1)
+    ) / (1.0 - 0.1)
     if key == "clup":
         x = 1 - x
     return f"{x:.3f}"
 
 
 keys = {
-    "tau": r"Standard $\tau$",
     "wtau_smooth": r"Weighted $\tau$",
-    "clup": r"Average $p$-value",
-    "evalcount_smooth": r"Evaluation focus",
+    "evalcount_log": r"Evaluation focus",
+    # "tau": r"Standard $\tau$",
+    # "clup": r"Average $p$-value",
 }
 
 outputs = [x for x in outputs if "data" in x]

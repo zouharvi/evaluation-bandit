@@ -1,6 +1,6 @@
 import math
 import random
-from typing import Any, Callable, Literal
+from typing import Callable, Literal
 
 import collections
 from . import utils
@@ -42,7 +42,7 @@ def successive_rejects(
     data = list(data)
     models = list(data[0]["scores"])
     if phases == "constant":
-        _phases: Any = [
+        _phases = [
             round(2 * budget / (len(models) ** 2 + len(models) - 2))
             for i in range(len(models) - 1)
         ]

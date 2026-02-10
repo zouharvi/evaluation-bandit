@@ -30,31 +30,25 @@ def area_under_curve(outputs, key):
         y=[
             np.mean([x[key] for x in xs])
             for xs in data_by_budget
-            if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 0.9
+            if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 1.0
         ],
         x=[
             xs[0]["budget"]
             for xs in data_by_budget
-            if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 0.9
+            if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 1.0
         ],
-    ) / (0.9 - 0.1)
-    if key == "clup":
-        x = 1 - x
-    return f"{x:.3f}"
+    )
+    return f"{x / (1 - 0.1):.3f}"
 
 
 keys = {
-    # "tau": r"Standard $\tau$",
     "wtau_smooth": r"Weighted $\tau$",
-    # "clup": r"Average $p$-value",
-    "evalcount_smooth": r"Evaluation focus",
+    "evalcount_log": r"Evaluation focus",
 }
 
 
 for output_i, output in enumerate(outputs_all):
     print(
-        f"{output['name']:<45}",
+        f"{output['name']:>50}",
         *(f"{area_under_curve(output['data'], key)}" for key in keys.keys()),
-        sep=", ",
-        end=",\n",
     )

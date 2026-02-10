@@ -5,8 +5,6 @@ import numpy as np
 import concurrent.futures
 import tqdm
 
-BUDGETS = np.linspace(0.1, 0.9, 20, dtype=float)
-
 
 def _simulate(args):
     (
@@ -33,16 +31,19 @@ def _simulate(args):
             output.append(
                 {
                     "budget": budget_p,
-                    "tau": utils.tau(model_scores, model_scores_true),
                     "wtau_smooth": utils.wtau_smooth(model_scores, model_scores_true),
-                    "wtau_top": utils.wtau_top(model_scores, model_scores_true),
-                    "clup": utils.clusters_p(model_scores),
-                    "evalcount_smooth": utils.evalcount_smooth(
+                    "evalcount_log": utils.evalcount_log(
                         model_scores, model_scores_true, budget
                     ),
-                    "evalcount_top": utils.evalcount_top(
-                        model_scores, model_scores_true, budget
-                    ),
+                    # "tau": utils.tau(model_scores, model_scores_true),
+                    # "wtau_top": utils.wtau_top(model_scores, model_scores_true),
+                    # "clup": utils.clusters_p(model_scores),
+                    # "evalcount": utils.evalcount_smooth(
+                    #     model_scores, model_scores_true, budget
+                    # ),
+                    # "evalcount_top": utils.evalcount_top(
+                    #     model_scores, model_scores_true, budget
+                    # ),
                 }
             )
         else:
@@ -61,6 +62,9 @@ def simulate(
     max_workers=None,
 ):
     print("Running", fn.__name__, "with", fn_kwargs)
+
+    # BUDGETS = np.linspace(0.1, 0.9, 20, dtype=float)
+    BUDGETS = np.linspace(0.1, 1.0, 20, dtype=float)
 
     data_all = fn_data_all()
     data_all_len = len(data_all)
@@ -94,14 +98,16 @@ def simulate(
         data_agg[(item["data_name"], item["budget"])].append(item)
 
     def compute_stats(xs):
-        keys = [
-            "tau",
+        keys = (
             "wtau_smooth",
-            "wtau_top",
-            "clup",
-            "evalcount_smooth",
-            "evalcount_top",
-        ]
+            "evalcount_log",
+            # "tau",
+            # "wtau_smooth",
+            # "wtau_top",
+            # "clup",
+            # "evalcount_smooth",
+            # "evalcount_top",
+        )
         out = {
             "data_name": xs[0]["data_name"],
             "budget": xs[0]["budget"],

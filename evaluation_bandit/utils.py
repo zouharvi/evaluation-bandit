@@ -77,6 +77,29 @@ def wtau_top(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     return val
 
 
+def evalcount_log(
+    model_scores1: ModelScores, model_scores2: ModelScores, budget: int
+) -> float:
+    weigher = lambda rank: 1 / (rank + 1)
+    # sort model_score1 by model_scores2
+    model_scores1 = sorted(
+        model_scores1.items(),
+        key=lambda m: statistics.mean(model_scores2[m[0]]),
+        reverse=True,
+    )  # type: ignore
+    weights = [weigher(r) for r in range(len(model_scores1))]
+    weight_sum = sum(weights)
+
+    evalcount = sum(
+        [
+            weights[r] / weight_sum * np.log2(len(scores))
+            for r, (model, scores) in enumerate(model_scores1)
+        ]
+    )
+
+    return evalcount
+
+
 def evalcount_smooth(
     model_scores1: ModelScores, model_scores2: ModelScores, budget: int
 ) -> float:
