@@ -25,6 +25,12 @@ outputs = [
         "method": "weighted_sampling_rank",
     },
     {
+        "method_typst": "Sampling oracle rank",
+        # "method_latex": "Sampling oracle rank",
+        "method_latex": None,
+        "method": "weighted_sampling_oracle_rank",
+    },
+    {
         "method_typst": "Sampling rank-sqrt",
         "method_latex": "Sampling rank-sqrt",
         "method": "weighted_sampling_ranksqrt",
@@ -100,10 +106,15 @@ for output in outputs:
 from evaluation_bandit import utils_fig
 import collections
 import numpy as np
+import scipy.signal
 import matplotlib.pyplot as plt
 import importlib
 
 importlib.reload(utils_fig)
+
+
+def smooth(ys):
+    return scipy.signal.savgol_filter(ys, 7, 2)
 
 
 def plot_output(outputs, label, axs, color=None):
@@ -119,7 +130,7 @@ def plot_output(outputs, label, axs, color=None):
     ):
         ax.plot(
             xs,
-            [np.mean([x[key] for x in xs]) for xs in data_by_budget],
+            smooth([np.mean([x[key] for x in xs]) for xs in data_by_budget]),
             label=label,
             color=color,
             linewidth=2.0,
@@ -127,8 +138,8 @@ def plot_output(outputs, label, axs, color=None):
         )
         ax.fill_between(
             xs,
-            [np.mean([x[key + "_ci"][0] for x in xs]) for xs in data_by_budget],
-            [np.mean([x[key + "_ci"][1] for x in xs]) for xs in data_by_budget],
+            smooth([np.mean([x[key + "_ci"][0] for x in xs]) for xs in data_by_budget]),
+            smooth([np.mean([x[key + "_ci"][1] for x in xs]) for xs in data_by_budget]),
             alpha=0.4,
             color=color,
             linewidth=0.0,
@@ -166,8 +177,9 @@ for ax in axs:
 
 axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 # axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[0].set_ylim(0.83, 1.0 + 0.01)
-axs[1].set_ylim(6.5, None)
+axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
+axs[0].set_ylim(0.9, 1.0 + 0.01)
+axs[1].set_ylim(50, None)
 axs[0].set_ylabel(r"Weighted $\tau$", labelpad=-5)
 axs[1].set_ylabel("\nEvaluation focus", labelpad=1)
 

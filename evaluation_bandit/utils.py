@@ -79,23 +79,35 @@ def evalfocus(
         key=lambda m: statistics.mean(model_scores2[m[0]]),
         reverse=True,
     )  # type: ignore
-    weights = [weigher(r) for r in range(len(model_scores1))]
-    weight_sum = sum(weights)
+    weights = {model: weigher(r) for r, (model, _) in enumerate(model_scores1)}
+    weight_sum = sum(weights.values())
+    # maximum number of items
+    # data_len = len(model_scores2[list(model_scores2.keys())[0]])
 
     evalfocus = sum(
         [
-            weights[r] / weight_sum * np.log2(max(0.5, len(scores)))
-            for r, (model, scores) in enumerate(model_scores1)
-        ]
-    )
-    evalfocus_max = sum(
-        [
-            weights[r] / weight_sum * np.log2(round(weights[r] / weight_sum * budget))
-            for r, (model, scores) in enumerate(model_scores1)
+            weights[model] / weight_sum * np.log2(max(0.5, len(scores)))
+            for model, scores in model_scores1
         ]
     )
 
-    return evalfocus**2 / evalfocus_max**2
+    # model_scores_max = {model: 0 for model in model_scores1}
+    # models_alive = set(model_scores_max.keys())
+    # cost = 0
+    # while cost < budget:
+    #     for model, weight in weights.items():
+    #         model_use = min(weight * budget, data_len)
+    #         evalfocus_max = weight * np.log2(model_use)
+
+    # evalfocus_max = sum(
+    #     [
+    #         weights[r] * np.log2(round(weights[r] * budget))
+    #         for r, (model, scores) in enumerate(model_scores1)
+    #     ]
+    # )
+
+    return evalfocus**2
+    # / evalfocus_max**2
 
 
 def evalfocus_abs(

@@ -67,16 +67,8 @@ def successive_rejects(
     else:
         raise ValueError("Other (e.g. more dynamic) phase lengths not implemented yet.")
 
-    # expected_cost = sum(
-    #     [m * phase for m, phase in zip(range(len(models), 1, -1), _phases)]
-    # )
-    # if expected_cost > budget * 1.25 or expected_cost < budget * 0.75:
-    #     print("Warning: budget too small/large for the selected phases. Expected cost:", expected_cost, "Budget:", budget)
-
     # last phase always takes all remaining budget
     _phases[-1] = budget
-
-    # last phase needs to have at least two models still
 
     cost = 0
 
@@ -114,25 +106,24 @@ def successive_rejects(
 def weighted_sampling(
     data,
     budgets: list[int],
-    sampling_fn: Callable[[list[float], int, int], float] = lambda x, rank, total: 1
-    / (rank + 1),
+    sampling_fn: Callable[[list[float], int, int], float] = lambda scores,
+    rank,
+    total: 1 / (rank + 1),
+    estimator_fn: Callable[
+        dict[str, list[float]], dict[str, float]
+    ] = lambda model_scores: {
+        model: utils.statistics.mean(scores) for model, scores in model_scores.items()
+    },
     coldstart=5,
 ) -> list[utils.ModelScores]:
-    """
-    Rank-based epsilon-greedy approach
-    """
     data = list(data)
-    model_index = {model: 0 for model in data[0]["scores"]}
-    model_scores = {model: [] for model in data[0]["scores"]}
-    models = list(data[0]["scores"])
-    cost = 0
     # cold start phase
-    for _ in range(coldstart):
-        for model in models:
-            item = data[model_index[model]]
-            model_scores[model].append(item["scores"][model])
-            model_index[model] += 1
-            cost += 1
+    model_scores = {
+        model: [x["scores"][model] for x in data[:coldstart]]
+        for model in data[0]["scores"]
+    }
+    models = list(data[0]["scores"])
+    cost = sum([len(model_scores[model]) for model in models])
     models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
 
     output = []
@@ -150,12 +141,13 @@ def weighted_sampling(
             ],
             k=1,
         )[0]
-        item = data[model_index[model]]
+        item = data[len(model_scores[model])]
         model_scores[model].append(item["scores"][model])
-        model_index[model] += 1
         cost += 1
 
-        models = [model for model, i in model_index.items() if i < len(data)]
+        models = [
+            model for model in model_scores if len(model_scores[model]) < len(data)
+        ]
         models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
 
         if cost >= budgets[0]:
@@ -168,18 +160,20 @@ def weighted_sampling(
 def weighted_sampling_oracle(
     data,
     budgets: list[int],
-    sampling_fn: Callable[[list[float], int, int], float] = (
-        lambda x, rank, total: 1 / (rank + 1)
-    ),
+    sampling_fn: Callable[[list[float], int, int], float] = lambda scores,
+    rank,
+    total: 1 / (rank + 1),
+    coldstart=5,
 ) -> list[utils.ModelScores]:
     data = list(data)
+    model_scores = {model: [data[0]["scores"][model]] for model in data[0]["scores"]}
     models = list(data[0]["scores"])
-    # sort models by mean total score
+    # sort according to total score
     models.sort(
         key=lambda m: utils.statistics.mean([x["scores"][m] for x in data]),
         reverse=True,
     )
-    models_weight = {
+    weights = {
         model: sampling_fn(
             [x["scores"][model] for x in data],
             rank,
@@ -187,20 +181,30 @@ def weighted_sampling_oracle(
         )
         for rank, model in enumerate(models)
     }
-    _models_weight_all = sum(models_weight.values())
-    models_weight = {
-        model: w / _models_weight_all for model, w in models_weight.items()
-    }
 
+    cost = 0
     output = []
-    for budget in budgets:
-        model_scores = {
-            model: [
-                x["scores"][model] for x in data[: round(models_weight[model] * budget)]
-            ]
-            for model in models
-        }
-        output.append(model_scores)
+    # allocation phase
+    while len(budgets) > 0:
+        model = random.choices(
+            models,
+            weights=[weights[m] for m in models],
+            k=1,
+        )[0]
+        item = data[len(model_scores[model])]
+        model_scores[model].append(item["scores"][model])
+        cost += 1
+
+        models = [
+            model for model, scores in model_scores.items() if len(scores) < len(data)
+        ]
+
+        if cost >= budgets[0]:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
+
+        if not models:
+            break
 
     return output
 
@@ -216,21 +220,13 @@ def statistical_ambiguity_reduction(
     models = [
         {
             "model": model,
-            "index": 0,
             "ci": None,
             "pvalue": collections.defaultdict(lambda: None),
-            "scores": [],
+            "scores": [x["scores"][model] for x in data[:coldstart]],
         }
         for model in data[0]["scores"]
     ]
-    cost = 0
-    # cold start phase
-    for _ in range(coldstart):
-        for model in models:
-            item = data[model["index"]]
-            model["scores"].append(item["scores"][model["model"]])
-            model["index"] += 1
-            cost += 1
+    cost = sum([len(model["scores"]) for model in models])
 
     def recompute_meta(model_dirty):
         nonlocal models
@@ -279,13 +275,12 @@ def statistical_ambiguity_reduction(
             )
         }
         model = min(
-            [m for m in models if m["index"] < len(data)],
+            [m for m in models if len(m["scores"]) < len(data)],
             key=lambda m: weight_pointwise * model_rank_ci[m["model"]]
             + weight_pairwise * model_rank_p[m["model"]],
         )
-        item = data[model["index"]]
+        item = data[len(model["scores"])]
         model["scores"].append(item["scores"][model["model"]])
-        model["index"] += 1
         cost += 1
 
         recompute_meta(model)
@@ -317,26 +312,24 @@ def upper_confidence_bound(
     model_sum_scores = {model: 0.0 for model in models}
 
     # To keep track of where we are in the data for each model
-    model_index = {model: 0 for model in models}
     cost = 0
     output = []
 
     # Cold start: sample each model coldstart times
     for _ in range(coldstart):
         for model in models:
-            if model_index[model] < len(data):
-                score = data[model_index[model]]["scores"][model]
+            if len(model_scores[model]) < len(data):
+                score = data[len(model_scores[model])]["scores"][model]
                 model_scores[model].append(score)
                 model_sum_scores[model] += score
                 model_counts[model] += 1
-                model_index[model] += 1
                 cost += 1
 
     while budgets and cost < budgets[0]:
         # Calculate UCB for all models
         # UCB = mean + c * sqrt(ln(total_counts) / model_counts)
         ucb_scores = {}
-        models = [model for model in models if model_index[model] < len(data)]
+        models = [model for model in models if len(model_scores[model]) < len(data)]
 
         total_counts = sum(model_counts.values())
         ln_total = math.log(total_counts)
@@ -349,11 +342,10 @@ def upper_confidence_bound(
         selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk]
 
         for model in selected_models:
-            score = data[model_index[model]]["scores"][model]
+            score = data[len(model_scores[model])]["scores"][model]
             model_scores[model].append(score)
             model_sum_scores[model] += score
             model_counts[model] += 1
-            model_index[model] += 1
             cost += 1
 
         if cost >= budgets[0]:
