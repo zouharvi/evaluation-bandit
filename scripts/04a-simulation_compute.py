@@ -82,7 +82,7 @@ def simulate(fn, fn_kwargs={}, **kwargs):
 if args.method == "uniform":
     output = simulate(algorithms.uniform)
 elif args.method == "uniform_nonsquare":
-    output = simulate(algorithms.uniform_nonsquare)
+    output = simulate(algorithms.uniform_nonsquare, accepts_budgets=True)
 elif args.method == "successive_rejects_constant":
     output = simulate(algorithms.successive_rejects, fn_kwargs=dict(phases="constant"))
 elif args.method == "weighted_sampling_rank":
