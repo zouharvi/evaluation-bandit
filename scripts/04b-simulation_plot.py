@@ -22,7 +22,7 @@ outputs = [
     {
         "method_typst": "Sampling rank",
         "method_latex": "Sampling rank",
-        "method": "weighted_sampling_ranksmooth",
+        "method": "weighted_sampling_rank",
     },
     {
         "method_typst": "Sampling rank-sqrt",
@@ -115,7 +115,7 @@ def plot_output(outputs, label, axs, color=None):
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
-        ["wtau_smooth", "evalcount_log"],
+        ["wtau", "evalfocus"],
     ):
         ax.plot(
             xs,
@@ -169,7 +169,7 @@ axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}
 axs[0].set_ylim(0.83, 1.0 + 0.01)
 axs[1].set_ylim(6.5, None)
 axs[0].set_ylabel(r"Weighted $\tau$", labelpad=-5)
-axs[1].set_ylabel("\nEvaluation focus", labelpad=-1)
+axs[1].set_ylabel("\nEvaluation focus", labelpad=1)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
@@ -223,8 +223,8 @@ def area_under_curve(outputs, key):
 
 
 keys = {
-    "wtau_smooth": r"Weighted $\tau$",
-    "evalcount_log": r"Evaluation focus",
+    "wtau": r"Weighted $\tau$",
+    "evalfocus": r"Evaluation focus",
     # "tau": r"Standard $\tau$",
     # "clup": r"Average $p$-value",
 }

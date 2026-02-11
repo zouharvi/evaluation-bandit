@@ -49,38 +49,30 @@ def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     return val
 
 
-def wtau_smooth(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
+def wtau(
+    model_scores1: ModelScores,
+    model_scores2: ModelScores,
+    weigher=lambda rank: 1 / (rank + 1) ** 2,
+) -> float:
     """
     weighted tau correlation. Prioritizes correct rankings for better models
     """
     val: float = scipy.stats.weightedtau(
         [statistics.mean(model_scores1[model]) for model in model_scores1],
         [statistics.mean(model_scores2[model]) for model in model_scores1],
-        weigher=lambda rank: 1 / (rank + 1),
+        weigher=lambda rank: 1 / (rank + 1) ** 2,
     )[0]  # type: ignore
     if np.isnan(val):
         return 0.0
     return val
 
 
-def wtau_top(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
-    """
-    weighted tau correlation. Prioritizes correct rankings for top models
-    """
-    val: float = scipy.stats.weightedtau(
-        [statistics.mean(model_scores1[model]) for model in model_scores1],
-        [statistics.mean(model_scores2[model]) for model in model_scores1],
-        weigher=lambda rank: (1 if rank <= 2 else 0.5 if rank <= 5 else 0.001),
-    )[0]  # type: ignore
-    if np.isnan(val):
-        return 0.0
-    return val
-
-
-def evalcount_log(
-    model_scores1: ModelScores, model_scores2: ModelScores, budget: int
+def evalfocus(
+    model_scores1: ModelScores,
+    model_scores2: ModelScores,
+    budget: int,
+    weigher=lambda rank: 1 / (rank + 1),
 ) -> float:
-    weigher = lambda rank: 1 / (rank + 1)
     # sort model_score1 by model_scores2
     model_scores1 = sorted(
         model_scores1.items(),
@@ -90,43 +82,27 @@ def evalcount_log(
     weights = [weigher(r) for r in range(len(model_scores1))]
     weight_sum = sum(weights)
 
-    evalcount = sum(
+    evalfocus = sum(
         [
-            weights[r] / weight_sum * np.log2(len(scores))
+            weights[r] / weight_sum * np.log2(max(0.5, len(scores)))
+            for r, (model, scores) in enumerate(model_scores1)
+        ]
+    )
+    evalfocus_max = sum(
+        [
+            weights[r] / weight_sum * np.log2(round(weights[r] / weight_sum * budget))
             for r, (model, scores) in enumerate(model_scores1)
         ]
     )
 
-    return evalcount
+    return evalfocus**2 / evalfocus_max**2
 
 
-def evalcount_smooth(
-    model_scores1: ModelScores, model_scores2: ModelScores, budget: int
-) -> float:
-    return evalcount(
-        model_scores1,
-        model_scores2,
-        budget,
-        weigher=lambda rank: 1 / (rank + 1),
-    )
-
-
-def evalcount_top(
-    model_scores1: ModelScores, model_scores2: ModelScores, budget: int
-) -> float:
-    return evalcount(
-        model_scores1,
-        model_scores2,
-        budget,
-        weigher=lambda rank: (1 if rank <= 2 else 0.5 if rank <= 5 else 0.001),
-    )
-
-
-def evalcount(
+def evalfocus_abs(
     model_scores1: ModelScores,
     model_scores2: ModelScores,
     budget: int,
-    weigher: Callable[[int], float],
+    weigher: Callable[[int], float] = lambda rank: 1 / (rank + 1),
 ) -> float:
     # sort model_score1 by model_scores2
     model_scores1 = sorted(
@@ -137,7 +113,7 @@ def evalcount(
     weights = [weigher(r) for r in range(len(model_scores1))]
     weight_sum = sum(weights)
 
-    evalcount = sum(
+    evalfocus = sum(
         [
             weights[r] / weight_sum * len(scores)
             for r, (model, scores) in enumerate(model_scores1)
@@ -156,14 +132,14 @@ def evalcount(
         if budget <= 0:
             break
 
-    evalcount_maximum = sum(
+    evalfocus_maximum = sum(
         [
             weights[r] / weight_sum * len(scores)
             for r, (model, scores) in enumerate(model_scores2_budget.items())
         ]
     )
 
-    return evalcount / evalcount_maximum
+    return evalfocus / evalfocus_maximum
 
 
 def clusters_p(model_scores: ModelScores) -> float:

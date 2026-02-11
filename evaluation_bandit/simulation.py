@@ -31,17 +31,17 @@ def _simulate(args):
             output.append(
                 {
                     "budget": budget_p,
-                    "wtau_smooth": utils.wtau_smooth(model_scores, model_scores_true),
-                    "evalcount_log": utils.evalcount_log(
+                    "wtau": utils.wtau(model_scores, model_scores_true),
+                    "evalfocus": utils.evalfocus(
                         model_scores, model_scores_true, budget
                     ),
                     # "tau": utils.tau(model_scores, model_scores_true),
                     # "wtau_top": utils.wtau_top(model_scores, model_scores_true),
                     # "clup": utils.clusters_p(model_scores),
-                    # "evalcount": utils.evalcount_smooth(
+                    # "evalfocus": utils.evalfocus_abs(
                     #     model_scores, model_scores_true, budget
                     # ),
-                    # "evalcount_top": utils.evalcount_top(
+                    # "evalfocus_top": utils.evalfocus_top(
                     #     model_scores, model_scores_true, budget
                     # ),
                 }
@@ -99,14 +99,14 @@ def simulate(
 
     def compute_stats(xs):
         keys = (
-            "wtau_smooth",
-            "evalcount_log",
+            "wtau",
+            "evalfocus",
             # "tau",
-            # "wtau_smooth",
+            # "wtau",
             # "wtau_top",
             # "clup",
-            # "evalcount_smooth",
-            # "evalcount_top",
+            # "evalfocus_abs",
+            # "evalfocus_top",
         )
         out = {
             "data_name": xs[0]["data_name"],

@@ -26,7 +26,7 @@ if args.method == "baseline":
     )
 elif args.method == "baseline_nonsquare":
     output = simulation.simulate(
-        fn=algorithms.uniform_random,
+        fn=algorithms.uniform_nonsquare,
         seeds=args.seeds,
         fn_data_all=utils.load_data_bymetrics,
     )
@@ -37,7 +37,7 @@ elif args.method == "successive_rejects_constant":
         seeds=args.seeds,
         fn_data_all=utils.load_data_bymetrics,
     )
-elif args.method == "weighted_sampling_ranksmooth":
+elif args.method == "weighted_sampling_rank":
 
     def sampling_fn_ranksmooth(ys, rank, total):
         return 1 / (rank + 1)
@@ -130,8 +130,8 @@ function sbatch_cpu() {
         --wrap="$JOB_WRAP";
 }
 
-# for method in baseline successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
-for method in weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
+# for method in baseline successive_rejects_constant weighted_sampling_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
+for method in weighted_sampling_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
     sbatch_cpu "simulation_metrics_$method" "python3 scripts/05b-simulation_metrics_compute.py --method $method"
 done
 """

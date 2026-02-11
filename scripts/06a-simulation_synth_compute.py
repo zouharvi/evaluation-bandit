@@ -31,14 +31,14 @@ if args.method == "baseline":
     )
 elif args.method == "baseline_nonsquare":
     output = simulate_fn(
-        fn=algorithms.uniform_random,
+        fn=algorithms.uniform_nonsquare,
     )
 elif args.method == "successive_rejects_constant":
     output = simulate_fn(
         fn=algorithms.successive_rejects,
         fn_kwargs=dict(phases="constant"),
     )
-elif args.method == "weighted_sampling_ranksmooth":
+elif args.method == "weighted_sampling_rank":
 
     def sampling_fn_ranksmooth(ys, rank, total):
         return 1 / (rank + 1)
@@ -138,7 +138,7 @@ function sbatch_gpu() {
 }
 
 
-for method in baseline successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
+for method in baseline successive_rejects_constant weighted_sampling_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
     sbatch_cpu "simulation_$method" "python3 scripts/06a-simulation_synth_compute.py --method $method --seeds 10"
 done
 """

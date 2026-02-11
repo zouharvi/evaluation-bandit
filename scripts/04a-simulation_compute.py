@@ -82,17 +82,17 @@ def simulate(fn, fn_kwargs={}, **kwargs):
 if args.method == "uniform":
     output = simulate(algorithms.uniform)
 elif args.method == "uniform_nonsquare":
-    output = simulate(algorithms.uniform_random)
+    output = simulate(algorithms.uniform_nonsquare)
 elif args.method == "successive_rejects_constant":
     output = simulate(algorithms.successive_rejects, fn_kwargs=dict(phases="constant"))
-elif args.method == "weighted_sampling_ranksmooth":
+elif args.method == "weighted_sampling_rank":
 
-    def sampling_fn_ranksmooth(ys, rank, total):
+    def sampling_fn_rank(ys, rank, total):
         return 1 / (rank + 1)
 
     output = simulate(
         algorithms.weighted_sampling,
-        fn_kwargs=dict(sampling_fn=sampling_fn_ranksmooth),
+        fn_kwargs=dict(sampling_fn=sampling_fn_rank),
         accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_ranksqrt":
@@ -126,6 +126,26 @@ elif args.method == "weighted_sampling_epsilongreedy":
     output = simulate(
         algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_epsilongreedy),
+        accepts_budgets=True,
+    )
+elif args.method == "weighted_sampling_oracle_ranksqrt":
+
+    def sampling_fn_ranksqrt(ys, rank, total):
+        return math.sqrt(1 / (rank + 1))
+
+    output = simulate(
+        algorithms.weighted_sampling_oracle,
+        fn_kwargs=dict(sampling_fn=sampling_fn_ranksqrt),
+        accepts_budgets=True,
+    )
+elif args.method == "weighted_sampling_oracle_rank":
+
+    def sampling_fn_rank(ys, rank, total):
+        return 1 / (rank + 1)
+
+    output = simulate(
+        algorithms.weighted_sampling_oracle,
+        fn_kwargs=dict(sampling_fn=sampling_fn_rank),
         accepts_budgets=True,
     )
 elif args.method == "ucb":
@@ -203,8 +223,12 @@ function sbatch_gpu_bigmem() {
 python3 scripts/04a-simulation_compute.py --method uniform_nonsquare --method-sorter random --seeds 100
 python3 scripts/04a-simulation_compute.py --method uniform --method-sorter random --seeds 100
 python3 scripts/04a-simulation_compute.py --method weighted_sampling_ranksqrt --method-sorter random --seeds 100
-python3 scripts/04a-simulation_compute.py --method weighted_sampling_ranksmooth --method-sorter random --seeds 100
+python3 scripts/04a-simulation_compute.py --method weighted_sampling_rank --method-sorter random --seeds 100
 python3 scripts/04a-simulation_compute.py --method successive_rejects_constant --method-sorter random --seeds 100
+python3 scripts/04a-simulation_compute.py --method weighted_sampling_oracle_rank --method-sorter random --seeds 100
+python3 scripts/04a-simulation_compute.py --method weighted_sampling_oracle_ranksqrt --method-sorter random --seeds 100
+
+
 
 
 python3 scripts/04a-simulation_compute.py --method uniform --method-sorter metricvar --seeds 1
@@ -216,13 +240,13 @@ python3 scripts/04a-simulation_compute.py --method uniform --method-sorter diver
 python3 scripts/04a-simulation_compute.py --method uniform --method-sorter sentinel_mqm --seeds 1
 python3 scripts/04a-simulation_compute.py --method uniform --method-sorter precomet_diffdisc --seeds 1
 
-for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_ranksqrt weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
+for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_ranksqrt weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10; do
 for method_sorter in random metricvar metricavg diversity_bleu diversity_unigram; do
     sbatch_cpu "simulation_${method}_${method_sorter}" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter $method_sorter --seeds 100 --max-workers 95";
 done
 done
 
-for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_ranksmooth weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
+for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
 for method_sorter in cometconfidence sentinel_mqm precomet_diffdisc diversity_lm; do
     sbatch_gpu_bigmem "simulation_${method}_${method_sorter}" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter $method_sorter --seeds 1 --max-workers 95";
 done

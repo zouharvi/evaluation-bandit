@@ -7,12 +7,13 @@ from . import utils
 
 
 def uniform(data, budget) -> utils.ModelScores:
-    items = random.sample(data, k=budget // len(data[0]["scores"]))
+    items = data[: budget // len(data[0]["scores"])]
 
     return utils.items_to_model_scores(items, average=False)
 
 
-def uniform_random(data, budget) -> utils.ModelScores:
+def uniform_nonsquare(data, budget) -> utils.ModelScores:
+    # TODO: rewrite to budgets for speed
     # shallow copy
     data = list(data)
     models = list(data[0]["scores"].keys())
@@ -160,6 +161,46 @@ def weighted_sampling(
         if cost >= budgets[0]:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
+
+    return output
+
+
+def weighted_sampling_oracle(
+    data,
+    budgets: list[int],
+    sampling_fn: Callable[[list[float], int, int], float] = (
+        lambda x, rank, total: 1 / (rank + 1)
+    ),
+) -> list[utils.ModelScores]:
+    data = list(data)
+    models = list(data[0]["scores"])
+    # sort models by mean total score
+    models.sort(
+        key=lambda m: utils.statistics.mean([x["scores"][m] for x in data]),
+        reverse=True,
+    )
+    models_weight = {
+        model: sampling_fn(
+            [x["scores"][model] for x in data],
+            rank,
+            len(models),
+        )
+        for rank, model in enumerate(models)
+    }
+    _models_weight_all = sum(models_weight.values())
+    models_weight = {
+        model: w / _models_weight_all for model, w in models_weight.items()
+    }
+
+    output = []
+    for budget in budgets:
+        model_scores = {
+            model: [
+                x["scores"][model] for x in data[: round(models_weight[model] * budget)]
+            ]
+            for model in models
+        }
+        output.append(model_scores)
 
     return output
 

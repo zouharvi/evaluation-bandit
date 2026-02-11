@@ -18,7 +18,7 @@ outputs = [
     {
         "typst": "Sampling rank-based",
         "latex": "Sampling rank-based",
-        "internal": "weighted_sampling_ranksmooth",
+        "internal": "weighted_sampling_rank",
     },
     {
         "typst": "Sampling $epsilon$-Greedy",
@@ -72,7 +72,7 @@ def plot_output(outputs, label, axs, color=None):
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
-        ["tau", "wtau_smooth", "clup", "evalcount_smooth"],
+        ["tau", "wtau", "clup", "evalfocus_abs"],
     ):
         ax.plot(
             xs,
@@ -187,9 +187,9 @@ def area_under_curve(outputs, key):
 
 keys = {
     "tau": r"Standard $\tau$",
-    "wtau_smooth": r"Weighted $\tau$",
+    "wtau": r"Weighted $\tau$",
     "clup": r"Average $p$-value",
-    "evalcount_smooth": r"Evaluation focus",
+    "evalfocus_abs": r"Evaluation focus",
 }
 
 outputs = [x for x in outputs if "data" in x]

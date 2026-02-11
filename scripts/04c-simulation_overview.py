@@ -14,6 +14,7 @@ def read_computed(fname):
 outputs_all = [
     {"name": fname.split("/")[-1].removesuffix(".json"), "data": read_computed(fname)}
     for fname in sorted(glob.glob("../computed/04/*.json"))
+    if "random" in fname
 ]
 
 
@@ -42,8 +43,8 @@ def area_under_curve(outputs, key):
 
 
 keys = {
-    "wtau_smooth": r"Weighted $\tau$",
-    "evalcount_log": r"Evaluation focus",
+    "wtau": r"Weighted $\tau$",
+    "evalfocus": r"Evaluation focus",
 }
 
 
