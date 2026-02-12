@@ -35,15 +35,8 @@ def _simulate(args):
                     "evalfocus": utils.evalfocus(
                         model_scores, model_scores_true, budget
                     ),
-                    # "tau": utils.tau(model_scores, model_scores_true),
-                    # "wtau_top": utils.wtau_top(model_scores, model_scores_true),
-                    # "clup": utils.clusters_p(model_scores),
-                    # "evalfocus": utils.evalfocus_abs(
-                    #     model_scores, model_scores_true, budget
-                    # ),
-                    # "evalfocus_top": utils.evalfocus_top(
-                    #     model_scores, model_scores_true, budget
-                    # ),
+                    "tau": utils.tau(model_scores, model_scores_true),
+                    "avg_pval": utils.avg_pval(model_scores),
                 }
             )
         else:
@@ -101,12 +94,8 @@ def simulate(
         keys = (
             "wtau",
             "evalfocus",
-            # "tau",
-            # "wtau",
-            # "wtau_top",
-            # "clup",
-            # "evalfocus_abs",
-            # "evalfocus_top",
+            "tau",
+            "avg_pval",
         )
         out = {
             "data_name": xs[0]["data_name"],

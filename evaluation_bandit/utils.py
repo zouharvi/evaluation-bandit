@@ -154,7 +154,7 @@ def evalfocus_abs(
     return evalfocus / evalfocus_maximum
 
 
-def clusters_p(model_scores: ModelScores) -> float:
+def avg_pval(model_scores: ModelScores) -> float:
     p_values = []
     # sort
     models = sorted(

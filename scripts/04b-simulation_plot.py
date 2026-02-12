@@ -50,12 +50,12 @@ outputs = [
         "method_latex": "Upper Confidence Bound",
         "method": "ucb",
     },
+    # only for extra
     {
         "method_typst": "Ambiguity reduction $lambda$=$1$",
-        "method_latex": "Ambiguity reduction $\\lambda=1$",
+        "method_latex": None,
         "method": "ambiguity_reduction_11",
     },
-    # no LaTeX for s2e
     {
         "method_typst": "Ambiguity reduction $lambda$=$0$",
         "method_latex": None,
@@ -66,15 +66,21 @@ outputs = [
         "method_latex": None,
         "method": "ambiguity_reduction_10",
     },
-    # {"typst": "MetricVar", "latex": None, "method": "s2e_metricvar"},
-    # {"typst": "MetricAvg", "latex": None, "method": "s2e_metricavg"},
-    # {"typst": "MetricCons", "latex": None, "method": "s2e_metriccons"},
-    # {"typst": "Diversity BLEU", "latex": None, "method": "s2e_diversity_bleu"},
-    # {"typst": "Diversity Unigram", "latex": None, "method": "s2e_diversity_unigram"},
-    # {"typst": "Diversity LM", "latex": None, "method": "s2e_diversity_lm"},
-    # {"typst": "Instant confidence", "latex": None, "method": "s2e_cometconfidence"},
-    # {"typst": "Sentinel MQM", "latex": None, "method": "s2e_sentinel_mqm"},
-    # {"typst": "Pre-Comet DiffDisc", "latex": None, "method": "s2e_precomet_diffdisc"},
+    {
+        "method_typst": "Thompson sampling",
+        "method_latex": None,
+        "method": "thompson_sampling",
+    },
+    {
+        "method_typst": "$p$-value rejects",
+        "method_latex": None,
+        "method": "pvalue_rejects",
+    },
+    {
+        "method_typst": "Successive halving",
+        "method_latex": None,
+        "method": "successive_halving",
+    },
 ]
 
 outputs = [
@@ -196,7 +202,7 @@ fig_legend.legend(
     handles,
     labels,
     loc="center",
-    ncol=4,
+    ncol=3,
     frameon=False,
     handlelength=1,
     handletextpad=0.3,
@@ -212,6 +218,8 @@ plt.show()
 
 
 def area_under_curve(outputs, key):
+    if key not in outputs[0]:
+        return None
     data_by_budget = collections.defaultdict(list)
     for output in outputs:
         data_by_budget[output["budget"]].append(output)
@@ -229,24 +237,21 @@ def area_under_curve(outputs, key):
             if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 0.9
         ],
     ) / (1.0 - 0.1)
-    if key == "clup":
-        x = 1 - x
+    # if key == "avg_pval":
+    #     x = 1 - x
     return f"{x:.3f}"
 
-
-keys = {
-    "wtau": r"Weighted $\tau$",
-    "evalfocus": r"Evaluation focus",
-    # "tau": r"Standard $\tau$",
-    # "clup": r"Average $p$-value",
-}
 
 outputs = [x for x in outputs if "data" in x]
 outputs = [
     {
-        "method": output["method_typst"],
+        "method": output["method"],
+        "method_typst": output["method_typst"],
         "method_ranker": output["method_ranker"],
-        **{key: area_under_curve(output["data"], key) for key in keys.keys()},
+        **{
+            key: area_under_curve(output["data"], key)
+            for key in ["wtau", "evalfocus", "tau", "avg_pval"]
+        },
     }
     for output in outputs
 ]
