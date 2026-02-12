@@ -24,12 +24,11 @@ outputs = [
         "method_latex": "Sampling rank",
         "method": "weighted_sampling_rank",
     },
-    {
-        "method_typst": "Sampling oracle rank",
-        # "method_latex": "Sampling oracle rank",
-        "method_latex": None,
-        "method": "weighted_sampling_oracle_rank",
-    },
+    # {
+    #     "method_typst": "Sampling oracle rank",
+    #     "method_latex": None,
+    #     "method": "weighted_sampling_oracle_rank",
+    # },
     {
         "method_typst": "Sampling rank-sqrt",
         "method_latex": "Sampling rank-sqrt",
@@ -220,26 +219,25 @@ plt.show()
 def area_under_curve(outputs, key):
     if key not in outputs[0]:
         return None
-    data_by_budget = collections.defaultdict(list)
-    for output in outputs:
-        data_by_budget[output["budget"]].append(output)
-    data_by_budget = sorted(data_by_budget.values(), key=lambda d: d[0]["budget"])
+    return f"{np.mean([x[key] for x in outputs]):.3f}"
+    # data_by_budget = collections.defaultdict(list)
+    # for output in outputs:
+    #     data_by_budget[output["budget"]].append(output)
+    # data_by_budget = sorted(data_by_budget.values(), key=lambda d: d[0]["budget"])
 
-    x = np.trapezoid(
-        y=[
-            np.mean([x[key] for x in xs])
-            for xs in data_by_budget
-            if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 0.9
-        ],
-        x=[
-            xs[0]["budget"]
-            for xs in data_by_budget
-            if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 0.9
-        ],
-    ) / (1.0 - 0.1)
-    # if key == "avg_pval":
-    #     x = 1 - x
-    return f"{x:.3f}"
+    # x = np.trapezoid(
+    #     y=[
+    #         np.mean([x[key] for x in xs])
+    #         for xs in data_by_budget
+    #         if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 1.0
+    #     ],
+    #     x=[
+    #         xs[0]["budget"]
+    #         for xs in data_by_budget
+    #         if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 1.0
+    #     ],
+    # )
+    # return f"{x / (1 - 0.1):.3f}"
 
 
 outputs = [x for x in outputs if "data" in x]
@@ -250,7 +248,7 @@ outputs = [
         "method_ranker": output["method_ranker"],
         **{
             key: area_under_curve(output["data"], key)
-            for key in ["wtau", "evalfocus", "tau", "avg_pval"]
+            for key in ["wtau", "evalfocus", "tau", "avg_pval", "stability"]
         },
     }
     for output in outputs

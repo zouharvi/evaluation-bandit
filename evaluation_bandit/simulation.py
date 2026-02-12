@@ -4,6 +4,7 @@ from evaluation_bandit import utils
 import numpy as np
 import concurrent.futures
 import tqdm
+import itertools
 
 
 def _simulate(args):
@@ -37,6 +38,7 @@ def _simulate(args):
                     ),
                     "tau": utils.tau(model_scores, model_scores_true),
                     "avg_pval": utils.avg_pval(model_scores),
+                    "model_scores": model_scores,
                 }
             )
         else:
@@ -101,6 +103,7 @@ def simulate(
             "data_name": xs[0]["data_name"],
             "budget": xs[0]["budget"],
         }
+        out["stability"] = utils.stability([x["model_scores"] for x in xs])
         for key in keys:
             out[key] = np.mean([x[key] for x in xs])
             out[key + "_ci"] = utils.confidence_interval([x[key] for x in xs])

@@ -4,6 +4,7 @@ import scipy.stats
 import statistics
 import collections
 import warnings
+import itertools
 
 ModelScores = dict[str, list[float]]
 
@@ -47,6 +48,23 @@ def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
     if np.isnan(val):
         return 0.0
     return val
+
+
+def stability(
+    model_scores_all: list[ModelScores],
+) -> float:
+    models = model_scores_all[0].keys()
+    model_scores_all = [
+        [statistics.mean(model_scores[model]) for model in models]
+        for model_scores in model_scores_all
+    ]
+    vals = [
+        scipy.stats.weightedtau(a, b, weigher=lambda rank: 1 / (rank + 1) ** 2)[0]
+        # we can't use just combinations because wtau is not symmetric
+        for a, b in itertools.product(model_scores_all, repeat=2)
+    ]
+    vals = [0.0 if np.isnan(x) else x for x in vals]
+    return statistics.mean(vals)
 
 
 def wtau(
