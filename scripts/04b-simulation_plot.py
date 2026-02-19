@@ -24,19 +24,19 @@ outputs = [
         "method_latex": "Sampling rank",
         "method": "weighted_sampling_rank",
     },
-    # {
-    #     "method_typst": "Sampling rank (oracle)",
-    #     "method_latex": None,
-    #     "method": "weighted_sampling_oracle_rank",
-    # },
+    {
+        "method_typst": "Sampling rank (oracle)",
+        "method_latex": None,
+        "method": "weighted_sampling_oracle_rank",
+    },
     {
         "method_typst": "Sampling rank-sqrt",
-        "method_latex": "Sampling rank-sqrt",
+        "method_latex": None,
         "method": "weighted_sampling_ranksqrt",
     },
     {
-        "method_typst": "Sampling rank-pow2",
-        "method_latex": "Sampling rank-pow2",
+        "method_typst": "Sampling rank$#none^2$",
+        "method_latex": None,
         "method": "weighted_sampling_rankpow2",
     },
     {

@@ -89,7 +89,7 @@ def evalfocus(
     model_scores1: ModelScores,
     model_scores2: ModelScores,
     budget: int,
-    weigher=lambda rank: 1 / (rank + 1),
+    weigher=lambda rank: 1 / (rank + 1) ** 2,
 ) -> float:
     # sort model_score1 by model_scores2
     model_scores1 = sorted(

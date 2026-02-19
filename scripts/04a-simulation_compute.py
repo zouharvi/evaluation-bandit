@@ -248,9 +248,8 @@ python3 scripts/04a-simulation_compute.py --method weighted_sampling_rank --meth
 python3 scripts/04a-simulation_compute.py --method weighted_sampling_oracle_rank --method-sorter random --seeds 100
 python3 scripts/04a-simulation_compute.py --method uniform --method-sorter random --seeds 100
 python3 scripts/04a-simulation_compute.py --method successive_rejects_constant --method-sorter random --seeds 100
-sbatch_cpu "simulation_weighted_sampling_rankpow2_random" "python3 scripts/04a-simulation_compute.py --method weighted_sampling_rankpow2 --method-sorter random --seeds 100"
 
-for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_oracle_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling; do
+for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_ranksqrt weighted_sampling_rankpow2 weighted_sampling_oracle_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling; do
 for method_sorter in random metricvar metricavg diversity_bleu diversity_unigram; do
     sbatch_cpu "simulation_${method}_${method_sorter}" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter $method_sorter --seeds 100 --max-workers 99";
 done
