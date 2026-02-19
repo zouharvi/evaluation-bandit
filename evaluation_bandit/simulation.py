@@ -55,6 +55,7 @@ def simulate(
     fn_data_all=utils.load_data,
     fn_data_sorter=None,
     max_workers=None,
+    cache_data_sorter=True,
 ):
     print("Running", fn.__name__, "with", fn_kwargs)
 
@@ -63,20 +64,37 @@ def simulate(
 
     data_all = fn_data_all()
     data_all_len = len(data_all)
-    # compute sorter only once
-    data_all = (
-        (
-            data_name,
-            utils.data_humanscores_only(fn_data_sorter(data)),
-            fn,
-            fn_kwargs,
-            accepts_budgets,
-            ranking_only,
-            BUDGETS,
+    if cache_data_sorter:
+        # compute sorter only once
+        data_all = (
+            (
+                data_name,
+                utils.data_humanscores_only(fn_data_sorter(data)),
+                fn,
+                fn_kwargs,
+                accepts_budgets,
+                ranking_only,
+                BUDGETS,
+            )
+            for data_name, data in data_all.items()
         )
-        for data_name, data in data_all.items()
-    )
-    data_all = ((seed, *tpl) for tpl in data_all for seed in range(seeds))
+        data_all = ((seed, *tpl) for tpl in data_all for seed in range(seeds))
+    else:
+        # sometimes we want the stochasticity
+        data_all = (
+            (
+                seed,
+                data_name,
+                utils.data_humanscores_only(fn_data_sorter(data)),
+                fn,
+                fn_kwargs,
+                accepts_budgets,
+                ranking_only,
+                BUDGETS,
+            )
+            for data_name, data in data_all.items()
+            for seed in range(seeds)
+        )
     print("Running simulations")
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         output = [

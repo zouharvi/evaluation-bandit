@@ -25,7 +25,7 @@ outputs = [
         "method": "weighted_sampling_rank",
     },
     # {
-    #     "method_typst": "Sampling oracle rank",
+    #     "method_typst": "Sampling rank (oracle)",
     #     "method_latex": None,
     #     "method": "weighted_sampling_oracle_rank",
     # },
@@ -33,6 +33,11 @@ outputs = [
         "method_typst": "Sampling rank-sqrt",
         "method_latex": "Sampling rank-sqrt",
         "method": "weighted_sampling_ranksqrt",
+    },
+    {
+        "method_typst": "Sampling rank-pow2",
+        "method_latex": "Sampling rank-pow2",
+        "method": "weighted_sampling_rankpow2",
     },
     {
         "method_typst": "Sampling $epsilon$-Greedy",
@@ -93,9 +98,9 @@ outputs = [
         "diversity_bleu",
         "diversity_unigram",
         "diversity_lm",
-        "cometconfidence",
-        "sentinel_mqm",
-        "precomet_diffdisc",
+        # "cometconfidence",
+        # "sentinel_mqm",
+        # "precomet_diffdisc",
     ]
 ]
 
@@ -128,10 +133,11 @@ def plot_output(outputs, label, axs, color=None):
         data_by_budget[output["budget"]].append(output)
     data_by_budget = sorted(data_by_budget.values(), key=lambda d: d[0]["budget"])
 
+    print(label)
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
-        ["wtau", "evalfocus"],
+        ["wtau", "stability", "evalfocus"],
     ):
         ax.plot(
             xs,
@@ -141,17 +147,22 @@ def plot_output(outputs, label, axs, color=None):
             linewidth=2.0,
             zorder=2 if label == "Uniform" else 1,
         )
-        ax.fill_between(
-            xs,
-            smooth([np.mean([x[key + "_ci"][0] for x in xs]) for xs in data_by_budget]),
-            smooth([np.mean([x[key + "_ci"][1] for x in xs]) for xs in data_by_budget]),
-            alpha=0.4,
-            color=color,
-            linewidth=0.0,
-        )
+        if key != "stability":
+            ax.fill_between(
+                xs,
+                smooth(
+                    [np.mean([x[key + "_ci"][0] for x in xs]) for xs in data_by_budget]
+                ),
+                smooth(
+                    [np.mean([x[key + "_ci"][1] for x in xs]) for xs in data_by_budget]
+                ),
+                alpha=0.4,
+                color=color,
+                linewidth=0.0,
+            )
 
 
-fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(8, 2.5))
+fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(8, 2.4))
 # axs = axs.flatten()
 
 output_i = 0
@@ -181,12 +192,14 @@ for ax in axs:
 
 
 axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-# axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
-axs[0].set_ylim(0.9, 1.0 + 0.01)
-axs[1].set_ylim(50, None)
-axs[0].set_ylabel(r"Weighted $\tau$", labelpad=-5)
-axs[1].set_ylabel("\nEvaluation focus", labelpad=1)
+axs[0].set_ylim(0.88, None)
+axs[0].set_ylabel(r"Ranking ($\tau_\omega$)", labelpad=-5)
+axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
+axs[1].set_ylim(0.88, None)
+axs[1].set_ylabel(r"Stability ($\tau_\omega$)", labelpad=-5)
+axs[2].set_ylim(50, None)
+axs[2].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
+axs[2].set_ylabel("\nEvaluation focus", labelpad=1)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
@@ -197,6 +210,10 @@ plt.show()
 # plot only legend
 fig_legend = plt.figure(figsize=(8, 0.4))
 handles, labels = axs[0].get_legend_handles_labels()
+# make the lines three times as thick
+for handle in handles:
+    handle.set_linewidth(6.0)
+
 fig_legend.legend(
     handles,
     labels,
@@ -204,7 +221,7 @@ fig_legend.legend(
     ncol=3,
     frameon=False,
     handlelength=1,
-    handletextpad=0.3,
+    handletextpad=0.5,
     columnspacing=1,
 )
 fig_legend.tight_layout(pad=0)
@@ -219,7 +236,11 @@ plt.show()
 def area_under_curve(outputs, key):
     if key not in outputs[0]:
         return None
-    return f"{np.mean([x[key] for x in outputs]):.3f}"
+    x = np.mean([x[key] for x in outputs])
+    if key == "evalfocus":
+        return f"{x:.1f}"
+    else:
+        return f"{x:.3f}"
     # data_by_budget = collections.defaultdict(list)
     # for output in outputs:
     #     data_by_budget[output["budget"]].append(output)

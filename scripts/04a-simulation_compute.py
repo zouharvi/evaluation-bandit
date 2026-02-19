@@ -75,6 +75,7 @@ def simulate(fn, fn_kwargs={}, **kwargs):
         seeds=args.seeds,
         fn_data_sorter=fn_data_sorter,
         max_workers=args.max_workers,
+        cache_data_sorter=args.method_sorter != "random",
         **kwargs,
     )
 
@@ -93,6 +94,16 @@ elif args.method == "weighted_sampling_rank":
     output = simulate(
         algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_rank),
+        accepts_budgets=True,
+    )
+elif args.method == "weighted_sampling_rankpow2":
+
+    def sampling_fn_rankpow2(ys, rank, total):
+        return 1 / ((rank + 1) ** 2)
+
+    output = simulate(
+        algorithms.weighted_sampling,
+        fn_kwargs=dict(sampling_fn=sampling_fn_rankpow2),
         accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_ranksqrt":
@@ -237,6 +248,7 @@ python3 scripts/04a-simulation_compute.py --method weighted_sampling_rank --meth
 python3 scripts/04a-simulation_compute.py --method weighted_sampling_oracle_rank --method-sorter random --seeds 100
 python3 scripts/04a-simulation_compute.py --method uniform --method-sorter random --seeds 100
 python3 scripts/04a-simulation_compute.py --method successive_rejects_constant --method-sorter random --seeds 100
+sbatch_cpu "simulation_weighted_sampling_rankpow2_random" "python3 scripts/04a-simulation_compute.py --method weighted_sampling_rankpow2 --method-sorter random --seeds 100"
 
 for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_oracle_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling; do
 for method_sorter in random metricvar metricavg diversity_bleu diversity_unigram; do
