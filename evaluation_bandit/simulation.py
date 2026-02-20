@@ -13,7 +13,7 @@ def _simulate(args):
         data,
         fn,
         kwargs_fn,
-        ranking_only,
+        estimator_fn,
         BUDGETS,
     ) = args
     budgets = [int(len(data) * len(data[0]["scores"]) * b) for b in BUDGETS]
@@ -26,24 +26,22 @@ def _simulate(args):
     model_scores_true = {
         model: [item["scores"][model] for item in data] for model in data[0]["scores"]
     }
+    model_estimates_true = estimator_fn(model_scores_true)
     output = []
     for budget_p, budget, model_scores in zip(BUDGETS, budgets, model_scores_all):
-        # TODO: apply fn_estimator to model_scores
-        if not ranking_only:
-            output.append(
-                {
-                    "budget": budget_p,
-                    "wtau": utils.wtau(model_scores, model_scores_true),
-                    "evalfocus": utils.evalfocus(
-                        model_scores, model_scores_true, budget
-                    ),
-                    "tau": utils.tau(model_scores, model_scores_true),
-                    "avg_pval": utils.avg_pval(model_scores),
-                    "model_scores": model_scores,
-                }
-            )
-        else:
-            raise NotImplementedError
+        model_estimates = estimator_fn(model_scores)
+        output.append(
+            {
+                "budget": budget_p,
+                "wtau": utils.wtau(model_estimates, model_estimates_true),
+                "evalfocus": utils.evalfocus(
+                    model_estimates, model_estimates_true, budget
+                ),
+                "tau": utils.tau(model_estimates, model_estimates_true),
+                "avg_pval": utils.avg_pval(model_scores),
+                "model_estimates": model_estimates,
+            }
+        )
     return [result | {"data_name": data_name, "seed": seed} for result in output]
 
 
@@ -51,7 +49,6 @@ def simulate(
     fn: Callable,
     seeds=1,
     kwargs_fn={},
-    ranking_only=False,
     data_all_fn=utils.load_data,
     data_sorter_fn=None,
     estimator_fn=estimators.mean,
@@ -73,7 +70,7 @@ def simulate(
                 utils.data_humanscores_only(data_sorter_fn(data)),
                 fn,
                 kwargs_fn,
-                ranking_only,
+                estimator_fn,
                 BUDGETS,
             )
             for data_name, data in data_all.items()
@@ -88,7 +85,7 @@ def simulate(
                 utils.data_humanscores_only(data_sorter_fn(data)),
                 fn,
                 kwargs_fn,
-                ranking_only,
+                estimator_fn,
                 BUDGETS,
             )
             for data_name, data in data_all.items()
@@ -120,7 +117,7 @@ def simulate(
             "data_name": xs[0]["data_name"],
             "budget": xs[0]["budget"],
         }
-        out["stability"] = utils.stability([x["model_scores"] for x in xs])
+        out["stability"] = utils.stability([x["model_estimates"] for x in xs])
         for key in keys:
             out[key] = np.mean([x[key] for x in xs])
             out[key + "_ci"] = utils.confidence_interval([x[key] for x in xs])

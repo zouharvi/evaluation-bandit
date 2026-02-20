@@ -338,6 +338,7 @@ def upper_confidence_bound(
     coldstart: int = 5,
     topk: int = 1,
     variant: Literal["ucb1", "lilucb"] = "ucb1",
+    estimator_fn: Callable[[list[float]], float] = estimators.mean,
 ) -> list[utils.ModelScores]:
     """
     Upper Confidence Bound (UCB1) or lil' UCB algorithm.
@@ -348,8 +349,6 @@ def upper_confidence_bound(
 
     # Track scores and counts for each model
     model_scores = {model: [] for model in models}
-    model_counts = {model: 0 for model in models}
-    model_sum_scores = {model: 0.0 for model in models}
 
     # To keep track of where we are in the data for each model
     cost = 0
@@ -361,36 +360,32 @@ def upper_confidence_bound(
             if len(model_scores[model]) < len(data):
                 score = data[len(model_scores[model])]["scores"][model]
                 model_scores[model].append(score)
-                model_sum_scores[model] += score
-                model_counts[model] += 1
                 cost += 1
 
     while budgets and cost < budgets[0]:
         # Calculate UCB for all models
-        ucb_scores = {}
         models = [model for model in models if len(model_scores[model]) < len(data)]
 
-        total_counts = sum(model_counts.values())
         if variant == "ucb1":
-            ln_total = math.log(total_counts)
+            ln_total = math.log(sum(len(model_scores[model]) for model in models))
 
+        ucb_scores = {}
+        model_estimates = estimator_fn({model: model_scores[model] for model in models})
         for model in models:
-            mean = model_sum_scores[model] / model_counts[model]
-
             if variant == "ucb1":
                 # UCB = mean + c * sqrt(ln(total_counts) / model_counts)
-                exploration = c * math.sqrt(ln_total / model_counts[model])
+                exploration = c * math.sqrt(ln_total / len(model_scores[model]))
             elif variant == "lilucb":
                 # lil' UCB = mean + c * sqrt(ln(ln(model_counts)) / model_counts)
                 # using max(..., 3) to ensure log(log(n)) > 0
                 exploration = c * math.sqrt(
-                    math.log(math.log(max(model_counts[model], 3)))
-                    / model_counts[model]
+                    math.log(math.log(max(len(model_scores[model]), 3)))
+                    / len(model_scores[model])
                 )
             else:
                 raise ValueError(f"Unknown variant {variant}")
 
-            ucb_scores[model] = mean + exploration
+            ucb_scores[model] = model_estimates[model] + exploration
 
         # Select topk models
         selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk]
@@ -398,8 +393,6 @@ def upper_confidence_bound(
         for model in selected_models:
             score = data[len(model_scores[model])]["scores"][model]
             model_scores[model].append(score)
-            model_sum_scores[model] += score
-            model_counts[model] += 1
             cost += 1
 
         if cost >= budgets[0]:
@@ -473,6 +466,7 @@ def thompson_sampling(
     budgets: list[int],
     coldstart=5,
     rank_top_k=1,
+    estimator_fn: Callable[[list[float]], float] = estimators.mean,
 ) -> list[utils.ModelScores]:
     """
     Thompson Sampling for Best Arm Identification.
@@ -483,9 +477,6 @@ def thompson_sampling(
 
     # Track scores and counts for each model
     model_scores = {model: [] for model in models}
-    model_counts = {model: 0 for model in models}
-    model_sum_scores = {model: 0.0 for model in models}
-    model_sq_sum_scores = {model: 0.0 for model in models}
 
     # To keep track of where we are in the data for each model
     cost = 0
@@ -497,9 +488,6 @@ def thompson_sampling(
             if len(model_scores[model]) < len(data):
                 score = data[len(model_scores[model])]["scores"][model]
                 model_scores[model].append(score)
-                model_sum_scores[model] += score
-                model_sq_sum_scores[model] += score**2
-                model_counts[model] += 1
                 cost += 1
 
     while budgets and cost < budgets[0]:
@@ -507,24 +495,11 @@ def thompson_sampling(
         ts_samples = {}
         models = [model for model in models if len(model_scores[model]) < len(data)]
 
+        model_estimates = estimator_fn({model: model_scores[model] for model in models})
         for model in models:
-            count = model_counts[model]
-            mean = model_sum_scores[model] / count
-            # Unbiased estimator for variance: s^2 = 1/(n-1) * sum((x_i - mean)^2)
-            # sum((x_i - mean)^2) = sum(x_i^2) - 2*mean*sum(x_i) + n*mean^2
-            # = sum(x_i^2) - 2*mean*(n*mean) + n*mean^2
-            # = sum(x_i^2) - n*mean^2
-            if count > 1:
-                var = (model_sq_sum_scores[model] - count * mean**2) / (count - 1)
-                # Ensure variance is non-negative and handle small variance
-                var = max(var, 1e-6)
-            else:
-                var = 1.0  # Default variance for small samples
-
-            # Sample from the posterior distribution of the mean
-            # Standard error of the mean is sqrt(var / n)
-            std_err = math.sqrt(var / count)
-            sample = random.normalvariate(mean, std_err)
+            sample = random.normalvariate(
+                model_estimates[model], statistics.stdev(model_scores[model])
+            )
             ts_samples[model] = sample
 
         # Select topk models
@@ -535,9 +510,6 @@ def thompson_sampling(
         for model in selected_models:
             score = data[len(model_scores[model])]["scores"][model]
             model_scores[model].append(score)
-            model_sum_scores[model] += score
-            model_sq_sum_scores[model] += score**2
-            model_counts[model] += 1
             cost += 1
 
         if cost >= budgets[0]:

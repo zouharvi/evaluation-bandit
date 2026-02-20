@@ -7,6 +7,7 @@ import warnings
 import itertools
 
 ModelScores = dict[str, list[float]]
+ModelEstimates = dict[str, float]
 
 warnings.filterwarnings(
     "ignore", category=RuntimeWarning, message="Precision loss occurred"
@@ -39,10 +40,10 @@ def pval_ind(scores1: list[float], scores2: list[float]) -> float:
     return val
 
 
-def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
+def tau(model_estimates1: ModelEstimates, model_estimates2: ModelEstimates) -> float:
     val: float = scipy.stats.kendalltau(
-        [statistics.mean(model_scores1[model]) for model in model_scores1],
-        [statistics.mean(model_scores2[model]) for model in model_scores1],
+        [model_estimates1[model] for model in model_estimates1],
+        [model_estimates2[model] for model in model_estimates1],
         variant="b",
     )[0]  # type: ignore
     if np.isnan(val):
@@ -51,33 +52,33 @@ def tau(model_scores1: ModelScores, model_scores2: ModelScores) -> float:
 
 
 def stability(
-    model_scores_all: list[ModelScores],
+    model_estimates_all: list[ModelEstimates],
 ) -> float:
-    models = model_scores_all[0].keys()
-    model_scores_all = [
-        [statistics.mean(model_scores[model]) for model in models]
-        for model_scores in model_scores_all
+    models = model_estimates_all[0].keys()
+    model_estimates_all = [
+        [model_estimates[model] for model in models]
+        for model_estimates in model_estimates_all
     ]
     vals = [
         scipy.stats.weightedtau(a, b, weigher=lambda rank: 1 / (rank + 1) ** 2)[0]
         # we can't use just combinations because wtau is not symmetric
-        for a, b in itertools.product(model_scores_all, repeat=2)
+        for a, b in itertools.product(model_estimates_all, repeat=2)
     ]
     vals = [0.0 if np.isnan(x) else x for x in vals]
     return statistics.mean(vals)
 
 
 def wtau(
-    model_scores1: ModelScores,
-    model_scores2: ModelScores,
+    model_estimates1: ModelEstimates,
+    model_estimates2: ModelEstimates,
     weigher=lambda rank: 1 / (rank + 1) ** 2,
 ) -> float:
     """
     weighted tau correlation. Prioritizes correct rankings for better models
     """
     val: float = scipy.stats.weightedtau(
-        [statistics.mean(model_scores1[model]) for model in model_scores1],
-        [statistics.mean(model_scores2[model]) for model in model_scores1],
+        [model_estimates1[model] for model in model_estimates1],
+        [model_estimates2[model] for model in model_estimates1],
         weigher=lambda rank: 1 / (rank + 1) ** 2,
     )[0]  # type: ignore
     if np.isnan(val):
@@ -96,11 +97,9 @@ def evalfocus(
         model_scores1.items(),
         key=lambda m: statistics.mean(model_scores2[m[0]]),
         reverse=True,
-    )  # type: ignore
+    )
     weights = {model: weigher(r) for r, (model, _) in enumerate(model_scores1)}
     weight_sum = sum(weights.values())
-    # maximum number of items
-    # data_len = len(model_scores2[list(model_scores2.keys())[0]])
 
     evalfocus = sum(
         [
@@ -109,67 +108,7 @@ def evalfocus(
         ]
     )
 
-    # model_scores_max = {model: 0 for model in model_scores1}
-    # models_alive = set(model_scores_max.keys())
-    # cost = 0
-    # while cost < budget:
-    #     for model, weight in weights.items():
-    #         model_use = min(weight * budget, data_len)
-    #         evalfocus_max = weight * np.log2(model_use)
-
-    # evalfocus_max = sum(
-    #     [
-    #         weights[r] * np.log2(round(weights[r] * budget))
-    #         for r, (model, scores) in enumerate(model_scores1)
-    #     ]
-    # )
-
     return evalfocus**2
-    # / evalfocus_max**2
-
-
-def evalfocus_abs(
-    model_scores1: ModelScores,
-    model_scores2: ModelScores,
-    budget: int,
-    weigher: Callable[[int], float] = lambda rank: 1 / (rank + 1),
-) -> float:
-    # sort model_score1 by model_scores2
-    model_scores1 = sorted(
-        model_scores1.items(),
-        key=lambda m: statistics.mean(model_scores2[m[0]]),
-        reverse=True,
-    )  # type: ignore
-    weights = [weigher(r) for r in range(len(model_scores1))]
-    weight_sum = sum(weights)
-
-    evalfocus = sum(
-        [
-            weights[r] / weight_sum * len(scores)
-            for r, (model, scores) in enumerate(model_scores1)
-        ]
-    )
-
-    model_scores2 = sorted(
-        model_scores2.items(),
-        key=lambda m: statistics.mean(m[1]),
-        reverse=True,
-    )  # type: ignore
-    model_scores2_budget = {}
-    for model, scores in model_scores2:
-        model_scores2_budget[model] = scores[:budget]
-        budget -= len(scores)
-        if budget <= 0:
-            break
-
-    evalfocus_maximum = sum(
-        [
-            weights[r] / weight_sum * len(scores)
-            for r, (model, scores) in enumerate(model_scores2_budget.items())
-        ]
-    )
-
-    return evalfocus / evalfocus_maximum
 
 
 def avg_pval(model_scores: ModelScores) -> float:

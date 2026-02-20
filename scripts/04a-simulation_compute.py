@@ -20,7 +20,13 @@ args.add_argument(
     "--method-estimator",
     type=str,
     default="mean",
-    choices=["mean", "additive"],
+    choices=["mean", "additive", "count"],
+)
+args.add_argument(
+    "--method-estimator-eval",
+    type=str,
+    default="mean",
+    choices=["mean", "additive", "count"],
 )
 args.add_argument(
     "--seeds",
@@ -35,43 +41,63 @@ args.add_argument(
 args = args.parse_args()
 
 if args.method_sorter == "random":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(method="random")
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(method="random")
 elif args.method_sorter == "metricvar":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_var", metric="metric"
     )
 elif args.method_sorter == "metricavg":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_avg", metric="metric"
     )
 elif args.method_sorter == "metriccons":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_cons", metric="metric"
     )
 elif args.method_sorter == "diversity_bleu":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="diversity", metric="BLEU"
     )
 elif args.method_sorter == "diversity_unigram":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="diversity", metric="unigram"
     )
 elif args.method_sorter == "diversity_lm":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="diversity", metric="lm"
     )
 elif args.method_sorter == "cometconfidence":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="comet_instant_confidence"
     )
 elif args.method_sorter == "sentinel_mqm":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(method="sentinel_src_mqm")
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(method="sentinel_src_mqm")
 elif args.method_sorter == "precomet_diffdisc":
-    fn_data_sorter = simulation.subset2evaluate_to_sorter(
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="precomet_diffdisc_direct"
     )
 else:
     raise ValueError(f"Unknown method_sorter: {args.method_sorter}")
+
+
+if args.method_estimator == "mean":
+    estimator_fn = simulation.mean
+elif args.method_estimator == "additive":
+    estimator_fn = simulation.additive
+elif args.method_estimator == "count":
+    estimator_fn = simulation.count
+else:
+    raise ValueError(f"Unknown method_estimator: {args.method_estimator}")
+
+
+if args.method_estimator_eval == "mean":
+    estimator_eval_fn = simulation.mean
+elif args.method_estimator_eval == "additive":
+    estimator_eval_fn = simulation.additive
+elif args.method_estimator_eval == "count":
+    estimator_eval_fn = simulation.count
+else:
+    raise ValueError(f"Unknown method_estimator_eval: {args.method_estimator_eval}")
 
 
 def simulate(fn, kwargs_fn={}, **kwargs):
@@ -79,9 +105,10 @@ def simulate(fn, kwargs_fn={}, **kwargs):
         fn=fn,
         kwargs_fn=kwargs_fn,
         seeds=args.seeds,
-        fn_data_sorter=fn_data_sorter,
+        data_sorter_fn=data_sorter_fn,
         max_workers=args.max_workers,
         cache_data_sorter=args.method_sorter != "random",
+        estimator_fn=estimator_eval_fn,
         **kwargs,
     )
 
@@ -95,17 +122,26 @@ elif args.method == "successive_rejects_constant":
 elif args.method == "weighted_sampling_rank":
     output = simulate(
         algorithms.weighted_sampling,
-        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: 1 / (rank + 1)),
+        kwargs_fn=dict(
+            sampling_fn=lambda ys, rank, total: 1 / (rank + 1),
+            estimator_fn=estimator_fn,
+        ),
     )
 elif args.method == "weighted_sampling_rankpow2":
     output = simulate(
         algorithms.weighted_sampling,
-        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: 1 / ((rank + 1) ** 2)),
+        kwargs_fn=dict(
+            sampling_fn=lambda ys, rank, total: 1 / ((rank + 1) ** 2),
+            estimator_fn=estimator_fn,
+        ),
     )
 elif args.method == "weighted_sampling_ranksqrt":
     output = simulate(
         algorithms.weighted_sampling,
-        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: math.sqrt(1 / (rank + 1))),
+        kwargs_fn=dict(
+            sampling_fn=lambda ys, rank, total: math.sqrt(1 / (rank + 1)),
+            estimator_fn=estimator_fn,
+        ),
     )
 elif args.method == "weighted_sampling_bolzmann":
     output = simulate(
@@ -113,7 +149,8 @@ elif args.method == "weighted_sampling_bolzmann":
         kwargs_fn=dict(
             sampling_fn=lambda ys, rank, total, temperature=10: math.exp(
                 statistics.mean(ys) / temperature
-            )
+            ),
+            estimator_fn=estimator_fn,
         ),
     )
 elif args.method == "weighted_sampling_epsilongreedy":
@@ -122,7 +159,8 @@ elif args.method == "weighted_sampling_epsilongreedy":
         kwargs_fn=dict(
             sampling_fn=lambda ys, rank, total, epsilon=0.5: 1 / (rank + 1)
             if rank == 0
-            else epsilon / (total - 1)
+            else epsilon / (total - 1),
+            estimator_fn=estimator_fn,
         ),
     )
 elif args.method == "weighted_sampling_oracle_ranksqrt":
