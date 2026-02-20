@@ -1,9 +1,10 @@
 # %%
 
-from evaluation_bandit import algorithms, utils
+from evaluation_bandit import algorithms, utils, estimators
 import math
 import importlib
 import random
+import statistics
 
 
 def shuffled(ys):
@@ -18,10 +19,14 @@ print(len(data))
 # %%
 importlib.reload(algorithms)
 importlib.reload(utils)
+importlib.reload(estimators)
 
 budget = 400
 print("                     ef   tau")
 
+data = shuffled(data)
+data.sort(key=lambda x: statistics.mean(x["scores"].values()))
+print(data[0]["scores"])
 
 model_scores_true = {
     model: [item["scores"][model] for item in data] for model in data[0]["scores"]
@@ -35,25 +40,13 @@ def eval_both(model_scores):
     )
 
 
-model_scores = [
-    algorithms.uniform_nonsquare(shuffled(data), [budget])[0] for _ in range(10)
-]
-print(utils.stability(model_scores))
+model_scores = algorithms.uniform_nonsquare((data), [budget])[0]
+print(utils.wtau(model_scores, model_scores_true))
 
-model_scores = [
-    algorithms.upper_confidence_bound(shuffled(data), [budget])[0] for _ in range(10)
-]
-print(utils.stability(model_scores))
-# print("uniform           ", *eval_both(model_scores))
-# model_scores = algorithms.weighted_sampling_oracle(
-#     data,
-#     sampling_fn=lambda x, rank, total: 1 / (rank + 1),
-#     budgets=[budget],
-# )[0]
-# print("rank oracle       ", *eval_both(model_scores))
-# model_scores = algorithms.weighted_sampling(
-#     data,
-#     sampling_fn=lambda x, rank, total: 1 / (rank + 1),
-#     budgets=[budget],
-# )[0]
-# print("rank              ", *eval_both(model_scores))
+model_scores = algorithms.weighted_sampling((data), [budget])[0]
+print(utils.wtau(model_scores, model_scores_true))
+
+model_scores = algorithms.weighted_sampling(
+    (data), [budget], estimator_fn=estimators.additive
+)[0]
+print(utils.wtau(model_scores, model_scores_true))

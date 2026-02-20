@@ -1,8 +1,10 @@
 import math
 import random
+import statistics
 from typing import Callable, Literal
 
 import collections
+from . import estimators
 from . import utils
 
 
@@ -41,7 +43,7 @@ def uniform_nonsquare(data, budgets: list[int]) -> list[utils.ModelScores]:
 
 def successive_rejects(
     data,
-    budget,
+    budget: int,
     phases: Literal["constant", "prioritize_all", "prioritize_top"] = "constant",
     ranking_from_elimination=False,
 ) -> utils.ModelScores:
@@ -95,7 +97,7 @@ def successive_rejects(
         # eliminate worst model
         model = min(
             models,
-            key=lambda m: utils.statistics.mean(model_scores[m]),
+            key=lambda m: statistics.mean(model_scores[m]),
         )
         models.remove(model)
         model_phase_elimintation[model] = phase
@@ -111,7 +113,7 @@ def successive_rejects(
 
 def successive_halving(
     data,
-    budget,
+    budget: int,
 ) -> utils.ModelScores:
     # shallow copy
     data = list(data)
@@ -140,7 +142,7 @@ def successive_halving(
 
         rounds -= 1
         models.sort(
-            key=lambda m: utils.statistics.mean(model_scores[m])
+            key=lambda m: statistics.mean(model_scores[m])
             if model_scores[m]
             else -float("inf"),
             reverse=True,
@@ -156,11 +158,7 @@ def weighted_sampling(
     sampling_fn: Callable[[list[float], int, int], float] = lambda scores,
     rank,
     total: 1 / (rank + 1),
-    estimator_fn: Callable[
-        dict[str, list[float]], dict[str, float]
-    ] = lambda model_scores: {
-        model: utils.statistics.mean(scores) for model, scores in model_scores.items()
-    },
+    estimator_fn: estimators.Estimator = estimators.mean,
     coldstart=5,
 ) -> list[utils.ModelScores]:
     data = list(data)
@@ -171,7 +169,7 @@ def weighted_sampling(
     }
     models = list(data[0]["scores"])
     cost = sum([len(model_scores[model]) for model in models])
-    models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
+    models.sort(key=lambda m: statistics.mean(model_scores[m]), reverse=True)
 
     output = []
     # active learning phase
@@ -195,7 +193,10 @@ def weighted_sampling(
         models = [
             model for model in model_scores if len(model_scores[model]) < len(data)
         ]
-        models.sort(key=lambda m: utils.statistics.mean(model_scores[m]), reverse=True)
+        model_estimate = estimator_fn(
+            {model: scores for model, scores in model_scores.items() if model in models}
+        )
+        models.sort(key=model_estimate.get, reverse=True)
 
         if cost >= budgets[0]:
             budgets = budgets[1:]
@@ -217,7 +218,7 @@ def weighted_sampling_oracle(
     models = list(data[0]["scores"])
     # sort according to total score
     models.sort(
-        key=lambda m: utils.statistics.mean([x["scores"][m] for x in data]),
+        key=lambda m: statistics.mean([x["scores"][m] for x in data]),
         reverse=True,
     )
     weights = {
@@ -456,7 +457,7 @@ def pvalue_rejects(
         if not sampled_any:
             break
 
-        models.sort(key=lambda m: utils.statistics.mean(model_scores[m]))
+        models.sort(key=lambda m: statistics.mean(model_scores[m]))
 
         # allow for pruning multiple models at the same time if there's difference
         while len(models) > 1:

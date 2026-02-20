@@ -4,7 +4,6 @@ from evaluation_bandit import utils
 import numpy as np
 import concurrent.futures
 import tqdm
-import itertools
 
 
 def _simulate(args):
@@ -14,15 +13,16 @@ def _simulate(args):
         data,
         fn,
         fn_kwargs,
-        accepts_budgets,
         ranking_only,
         BUDGETS,
     ) = args
     budgets = [int(len(data) * len(data[0]["scores"]) * b) for b in BUDGETS]
-    if accepts_budgets:
+    if "budgets" in fn.__code__.co_varnames:
         model_scores_all = fn(data, budgets=budgets, **fn_kwargs)
+    elif "budget" in fn.__code__.co_varnames:
+        model_scores_all = [fn(data, budget=budget, **fn_kwargs) for budget in budgets]
     else:
-        model_scores_all = [fn(data, budget, **fn_kwargs) for budget in budgets]
+        raise ValueError(f"Function {fn.__name__} does not accept budget nor budgets")
     model_scores_true = {
         model: [item["scores"][model] for item in data] for model in data[0]["scores"]
     }
@@ -50,7 +50,6 @@ def simulate(
     fn: Callable,
     seeds=1,
     fn_kwargs={},
-    accepts_budgets=False,
     ranking_only=False,
     fn_data_all=utils.load_data,
     fn_data_sorter=None,
@@ -72,7 +71,6 @@ def simulate(
                 utils.data_humanscores_only(fn_data_sorter(data)),
                 fn,
                 fn_kwargs,
-                accepts_budgets,
                 ranking_only,
                 BUDGETS,
             )
@@ -88,7 +86,6 @@ def simulate(
                 utils.data_humanscores_only(fn_data_sorter(data)),
                 fn,
                 fn_kwargs,
-                accepts_budgets,
                 ranking_only,
                 BUDGETS,
             )

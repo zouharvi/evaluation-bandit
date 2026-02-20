@@ -13,7 +13,11 @@ keywords = [
     "annotation",
 ]
 dependencies = [
-    "subset2evaluate>=1.0.18"
+    "subset2evaluate>=1.0.18",
+    "numpy>=2.0.0",
+    "matplotlib>=3.10",
+    "tqdm>=4.0.0",
+    "scipy>=1.10.0",
 ]
 
 [project.optional-dependencies]

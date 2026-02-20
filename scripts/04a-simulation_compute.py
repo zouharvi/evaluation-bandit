@@ -17,6 +17,12 @@ args.add_argument(
     default="random",
 )
 args.add_argument(
+    "--method-estimator",
+    type=str,
+    default="mean",
+    choices=["mean", "additive"],
+)
+args.add_argument(
     "--seeds",
     type=int,
     default=100,
@@ -94,7 +100,6 @@ elif args.method == "weighted_sampling_rank":
     output = simulate(
         algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_rank),
-        accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_rankpow2":
 
@@ -104,7 +109,6 @@ elif args.method == "weighted_sampling_rankpow2":
     output = simulate(
         algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_rankpow2),
-        accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_ranksqrt":
 
@@ -114,7 +118,6 @@ elif args.method == "weighted_sampling_ranksqrt":
     output = simulate(
         algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_ranksqrt),
-        accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_bolzmann":
 
@@ -124,7 +127,6 @@ elif args.method == "weighted_sampling_bolzmann":
     output = simulate(
         algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_bolzmann),
-        accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_epsilongreedy":
 
@@ -137,7 +139,6 @@ elif args.method == "weighted_sampling_epsilongreedy":
     output = simulate(
         algorithms.weighted_sampling,
         fn_kwargs=dict(sampling_fn=sampling_fn_epsilongreedy),
-        accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_oracle_ranksqrt":
 
@@ -147,7 +148,6 @@ elif args.method == "weighted_sampling_oracle_ranksqrt":
     output = simulate(
         algorithms.weighted_sampling_oracle,
         fn_kwargs=dict(sampling_fn=sampling_fn_ranksqrt),
-        accepts_budgets=True,
     )
 elif args.method == "weighted_sampling_oracle_rank":
 
@@ -157,43 +157,36 @@ elif args.method == "weighted_sampling_oracle_rank":
     output = simulate(
         algorithms.weighted_sampling_oracle,
         fn_kwargs=dict(sampling_fn=sampling_fn_rank),
-        accepts_budgets=True,
     )
 elif args.method == "ucb":
     output = simulate(
         algorithms.upper_confidence_bound,
         fn_kwargs=dict(topk=3, c=50),
-        accepts_budgets=True,
     )
 elif args.method == "ambiguity_reduction_11":
     output = simulate(
         algorithms.statistical_ambiguity_reduction,
         fn_kwargs=dict(weight_pointwise=1, weight_pairwise=1),
-        accepts_budgets=True,
     )
 elif args.method == "ambiguity_reduction_01":
     output = simulate(
         algorithms.statistical_ambiguity_reduction,
         fn_kwargs=dict(weight_pointwise=0, weight_pairwise=1),
-        accepts_budgets=True,
     )
 elif args.method == "ambiguity_reduction_10":
     output = simulate(
         algorithms.statistical_ambiguity_reduction,
         fn_kwargs=dict(weight_pointwise=1, weight_pairwise=0),
-        accepts_budgets=True,
     )
 elif args.method == "successive_halving":
     output = simulate(algorithms.successive_halving)
 elif args.method == "pvalue_rejects":
     output = simulate(
         algorithms.pvalue_rejects,
-        accepts_budgets=True,
     )
 elif args.method == "thompson_sampling":
     output = simulate(
         algorithms.thompson_sampling,
-        accepts_budgets=True,
     )
 else:
     raise ValueError(f"Unknown method: {args.method}")
