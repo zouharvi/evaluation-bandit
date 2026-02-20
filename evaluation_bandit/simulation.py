@@ -1,6 +1,6 @@
 import collections
 from typing import Callable
-from evaluation_bandit import utils
+from evaluation_bandit import utils, estimators
 import numpy as np
 import concurrent.futures
 import tqdm
@@ -12,15 +12,15 @@ def _simulate(args):
         data_name,
         data,
         fn,
-        fn_kwargs,
+        kwargs_fn,
         ranking_only,
         BUDGETS,
     ) = args
     budgets = [int(len(data) * len(data[0]["scores"]) * b) for b in BUDGETS]
     if "budgets" in fn.__code__.co_varnames:
-        model_scores_all = fn(data, budgets=budgets, **fn_kwargs)
+        model_scores_all = fn(data, budgets=budgets, **kwargs_fn)
     elif "budget" in fn.__code__.co_varnames:
-        model_scores_all = [fn(data, budget=budget, **fn_kwargs) for budget in budgets]
+        model_scores_all = [fn(data, budget=budget, **kwargs_fn) for budget in budgets]
     else:
         raise ValueError(f"Function {fn.__name__} does not accept budget nor budgets")
     model_scores_true = {
@@ -28,6 +28,7 @@ def _simulate(args):
     }
     output = []
     for budget_p, budget, model_scores in zip(BUDGETS, budgets, model_scores_all):
+        # TODO: apply fn_estimator to model_scores
         if not ranking_only:
             output.append(
                 {
@@ -49,28 +50,29 @@ def _simulate(args):
 def simulate(
     fn: Callable,
     seeds=1,
-    fn_kwargs={},
+    kwargs_fn={},
     ranking_only=False,
-    fn_data_all=utils.load_data,
-    fn_data_sorter=None,
+    data_all_fn=utils.load_data,
+    data_sorter_fn=None,
+    estimator_fn=estimators.mean,
     max_workers=None,
     cache_data_sorter=True,
 ):
-    print("Running", fn.__name__, "with", fn_kwargs)
+    print("Running", fn.__name__, "with", kwargs_fn)
 
     # BUDGETS = np.linspace(0.1, 0.9, 20, dtype=float)
     BUDGETS = np.linspace(0.1, 1.0, 20, dtype=float)
 
-    data_all = fn_data_all()
+    data_all = data_all_fn()
     data_all_len = len(data_all)
     if cache_data_sorter:
         # compute sorter only once
         data_all = (
             (
                 data_name,
-                utils.data_humanscores_only(fn_data_sorter(data)),
+                utils.data_humanscores_only(data_sorter_fn(data)),
                 fn,
-                fn_kwargs,
+                kwargs_fn,
                 ranking_only,
                 BUDGETS,
             )
@@ -83,9 +85,9 @@ def simulate(
             (
                 seed,
                 data_name,
-                utils.data_humanscores_only(fn_data_sorter(data)),
+                utils.data_humanscores_only(data_sorter_fn(data)),
                 fn,
-                fn_kwargs,
+                kwargs_fn,
                 ranking_only,
                 BUDGETS,
             )
@@ -127,11 +129,12 @@ def simulate(
     return [compute_stats(cs) for cs in data_agg.values()]
 
 
-def subset2evaluate_to_sorter(**fn_kwargs):
+def subset2evaluate_to_sorter(**kwargs_fn):
     def sorter(data):
         import subset2evaluate.select_subset
 
-        # make sure MetricX-25 is present everywhere
+        # make sure unified-ish metric is present everywhere
+        # combining different metrics is not an issue since each dataset has the same one
         for line in data:
             for model_v in line["scores"].values():
                 x = 0
@@ -141,7 +144,7 @@ def subset2evaluate_to_sorter(**fn_kwargs):
                         break
                 model_v["metric"] = x
 
-        data = subset2evaluate.select_subset.basic(list(data), **fn_kwargs)
+        data = subset2evaluate.select_subset.basic(list(data), **kwargs_fn)
 
         data_by_domain = collections.defaultdict(list)
         for item in data:

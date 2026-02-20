@@ -9,6 +9,13 @@ def mean(model_scores: dict[str, list[float]]) -> dict[str, float]:
     return {model: statistics.mean(scores) for model, scores in model_scores.items()}
 
 
+def count(model_scores: dict[str, list[float]]) -> dict[str, float]:
+    """
+    Useful for ranking based on when an item was eliminated etc.
+    """
+    return {model: len(scores) for model, scores in model_scores.items()}
+
+
 def additive(model_scores: dict[str, list[float]], iters: int = 10) -> dict[str, float]:
     models = list(model_scores.keys())
     len_max = max(len(scores) for scores in model_scores.values())

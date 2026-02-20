@@ -45,7 +45,6 @@ def successive_rejects(
     data,
     budget: int,
     phases: Literal["constant", "prioritize_all", "prioritize_top"] = "constant",
-    ranking_from_elimination=False,
 ) -> utils.ModelScores:
     # shallow copy
     data = list(data)
@@ -80,7 +79,6 @@ def successive_rejects(
 
     cost = 0
 
-    model_phase_elimintation = {}
     model_scores = {model: [] for model in models}
     for phase, phase_size in enumerate(_phases):
         break_game = False
@@ -100,15 +98,8 @@ def successive_rejects(
             key=lambda m: statistics.mean(model_scores[m]),
         )
         models.remove(model)
-        model_phase_elimintation[model] = phase
 
-    # add last models still in the game
-    model_phase_elimintation |= {model: len(_phases) for model in models}
-
-    if ranking_from_elimination:
-        return model_phase_elimintation
-    else:
-        return {model: model_scores[model] for model in model_scores}
+    return model_scores
 
 
 def successive_halving(
@@ -149,7 +140,7 @@ def successive_halving(
         )
         models = models[: len(models) // 2]
 
-    return {model: model_scores[model] for model in model_scores}
+    return model_scores
 
 
 def weighted_sampling(
