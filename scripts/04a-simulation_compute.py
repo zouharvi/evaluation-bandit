@@ -74,10 +74,10 @@ else:
     raise ValueError(f"Unknown method_sorter: {args.method_sorter}")
 
 
-def simulate(fn, fn_kwargs={}, **kwargs):
+def simulate(fn, kwargs_fn={}, **kwargs):
     return simulation.simulate(
         fn=fn,
-        fn_kwargs=fn_kwargs,
+        kwargs_fn=kwargs_fn,
         seeds=args.seeds,
         fn_data_sorter=fn_data_sorter,
         max_workers=args.max_workers,
@@ -91,92 +91,69 @@ if args.method == "uniform":
 elif args.method == "uniform_nonsquare":
     output = simulate(algorithms.uniform_nonsquare, accepts_budgets=True)
 elif args.method == "successive_rejects_constant":
-    output = simulate(algorithms.successive_rejects, fn_kwargs=dict(phases="constant"))
+    output = simulate(algorithms.successive_rejects, kwargs_fn=dict(phases="constant"))
 elif args.method == "weighted_sampling_rank":
-
-    def sampling_fn_rank(ys, rank, total):
-        return 1 / (rank + 1)
-
     output = simulate(
         algorithms.weighted_sampling,
-        fn_kwargs=dict(sampling_fn=sampling_fn_rank),
+        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: 1 / (rank + 1)),
     )
 elif args.method == "weighted_sampling_rankpow2":
-
-    def sampling_fn_rankpow2(ys, rank, total):
-        return 1 / ((rank + 1) ** 2)
-
     output = simulate(
         algorithms.weighted_sampling,
-        fn_kwargs=dict(sampling_fn=sampling_fn_rankpow2),
+        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: 1 / ((rank + 1) ** 2)),
     )
 elif args.method == "weighted_sampling_ranksqrt":
-
-    def sampling_fn_ranksqrt(ys, rank, total):
-        return math.sqrt(1 / (rank + 1))
-
     output = simulate(
         algorithms.weighted_sampling,
-        fn_kwargs=dict(sampling_fn=sampling_fn_ranksqrt),
+        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: math.sqrt(1 / (rank + 1))),
     )
 elif args.method == "weighted_sampling_bolzmann":
-
-    def sampling_fn_bolzmann(ys, rank, total, temperature=10):
-        return math.exp(statistics.mean(ys) / temperature)
-
     output = simulate(
         algorithms.weighted_sampling,
-        fn_kwargs=dict(sampling_fn=sampling_fn_bolzmann),
+        kwargs_fn=dict(
+            sampling_fn=lambda ys, rank, total, temperature=10: math.exp(
+                statistics.mean(ys) / temperature
+            )
+        ),
     )
 elif args.method == "weighted_sampling_epsilongreedy":
-
-    def sampling_fn_epsilongreedy(ys, rank, total, epsilon=0.5):
-        if rank == 0:
-            return 1.0 - epsilon
-        else:
-            return epsilon / (total - 1)
-
     output = simulate(
         algorithms.weighted_sampling,
-        fn_kwargs=dict(sampling_fn=sampling_fn_epsilongreedy),
+        kwargs_fn=dict(
+            sampling_fn=lambda ys, rank, total, epsilon=0.5: 1 / (rank + 1)
+            if rank == 0
+            else epsilon / (total - 1)
+        ),
     )
 elif args.method == "weighted_sampling_oracle_ranksqrt":
-
-    def sampling_fn_ranksqrt(ys, rank, total):
-        return math.sqrt(1 / (rank + 1))
-
     output = simulate(
         algorithms.weighted_sampling_oracle,
-        fn_kwargs=dict(sampling_fn=sampling_fn_ranksqrt),
+        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: math.sqrt(1 / (rank + 1))),
     )
 elif args.method == "weighted_sampling_oracle_rank":
-
-    def sampling_fn_rank(ys, rank, total):
-        return 1 / (rank + 1)
-
     output = simulate(
         algorithms.weighted_sampling_oracle,
-        fn_kwargs=dict(sampling_fn=sampling_fn_rank),
+        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: 1 / (rank + 1)),
     )
 elif args.method == "ucb":
     output = simulate(
         algorithms.upper_confidence_bound,
-        fn_kwargs=dict(topk=3, c=50),
+        kwargs_fn=dict(topk=3, c=50),
     )
 elif args.method == "ambiguity_reduction_11":
     output = simulate(
         algorithms.statistical_ambiguity_reduction,
-        fn_kwargs=dict(weight_pointwise=1, weight_pairwise=1),
+        kwargs_fn=dict(weight_pointwise=1, weight_pairwise=1),
     )
 elif args.method == "ambiguity_reduction_01":
     output = simulate(
         algorithms.statistical_ambiguity_reduction,
-        fn_kwargs=dict(weight_pointwise=0, weight_pairwise=1),
+        kwargs_fn=dict(weight_pointwise=0, weight_pairwise=1),
     )
 elif args.method == "ambiguity_reduction_10":
     output = simulate(
         algorithms.statistical_ambiguity_reduction,
-        fn_kwargs=dict(weight_pointwise=1, weight_pairwise=0),
+        kwargs_fn=dict(weight_pointwise=1, weight_pairwise=0),
     )
 elif args.method == "successive_halving":
     output = simulate(algorithms.successive_halving)
