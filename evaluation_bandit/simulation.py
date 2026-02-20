@@ -34,9 +34,7 @@ def _simulate(args):
             {
                 "budget": budget_p,
                 "wtau": utils.wtau(model_estimates, model_estimates_true),
-                "evalfocus": utils.evalfocus(
-                    model_estimates, model_estimates_true, budget
-                ),
+                "evalfocus": utils.evalfocus(model_scores, model_scores_true, budget),
                 "tau": utils.tau(model_estimates, model_estimates_true),
                 "avg_pval": utils.avg_pval(model_scores),
                 "model_estimates": model_estimates,

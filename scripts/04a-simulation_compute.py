@@ -1,4 +1,4 @@
-from evaluation_bandit import simulation, algorithms
+from evaluation_bandit import simulation, algorithms, estimators
 import argparse
 import math
 import statistics
@@ -81,21 +81,21 @@ else:
 
 
 if args.method_estimator == "mean":
-    estimator_fn = simulation.mean
+    estimator_fn = estimators.mean
 elif args.method_estimator == "additive":
-    estimator_fn = simulation.additive
+    estimator_fn = estimators.additive
 elif args.method_estimator == "count":
-    estimator_fn = simulation.count
+    estimator_fn = estimators.count
 else:
     raise ValueError(f"Unknown method_estimator: {args.method_estimator}")
 
 
 if args.method_estimator_eval == "mean":
-    estimator_eval_fn = simulation.mean
+    estimator_eval_fn = estimators.mean
 elif args.method_estimator_eval == "additive":
-    estimator_eval_fn = simulation.additive
+    estimator_eval_fn = estimators.additive
 elif args.method_estimator_eval == "count":
-    estimator_eval_fn = simulation.count
+    estimator_eval_fn = estimators.count
 else:
     raise ValueError(f"Unknown method_estimator_eval: {args.method_estimator_eval}")
 
@@ -120,63 +120,87 @@ elif args.method == "uniform_nonsquare":
 elif args.method == "successive_rejects_constant":
     output = simulate(algorithms.successive_rejects, kwargs_fn=dict(phases="constant"))
 elif args.method == "weighted_sampling_rank":
+
+    def sampling_fn(ys, rank, total):
+        return 1 / (rank + 1)
+
     output = simulate(
         algorithms.weighted_sampling,
         kwargs_fn=dict(
-            sampling_fn=lambda ys, rank, total: 1 / (rank + 1),
+            sampling_fn=sampling_fn,
             estimator_fn=estimator_fn,
         ),
     )
 elif args.method == "weighted_sampling_rankpow2":
+
+    def sampling_fn(ys, rank, total):
+        return 1 / ((rank + 1) ** 2)
+
     output = simulate(
         algorithms.weighted_sampling,
         kwargs_fn=dict(
-            sampling_fn=lambda ys, rank, total: 1 / ((rank + 1) ** 2),
+            sampling_fn=sampling_fn,
             estimator_fn=estimator_fn,
         ),
     )
 elif args.method == "weighted_sampling_ranksqrt":
+
+    def sampling_fn(ys, rank, total):
+        return math.sqrt(1 / (rank + 1))
+
     output = simulate(
         algorithms.weighted_sampling,
         kwargs_fn=dict(
-            sampling_fn=lambda ys, rank, total: math.sqrt(1 / (rank + 1)),
+            sampling_fn=sampling_fn,
             estimator_fn=estimator_fn,
         ),
     )
 elif args.method == "weighted_sampling_bolzmann":
+
+    def sampling_fn(ys, rank, total, temperature=10):
+        return math.exp(statistics.mean(ys) / temperature)
+
     output = simulate(
         algorithms.weighted_sampling,
         kwargs_fn=dict(
-            sampling_fn=lambda ys, rank, total, temperature=10: math.exp(
-                statistics.mean(ys) / temperature
-            ),
+            sampling_fn=sampling_fn,
             estimator_fn=estimator_fn,
         ),
     )
 elif args.method == "weighted_sampling_epsilongreedy":
+
+    def sampling_fn(ys, rank, total, epsilon=0.5):
+        return 1 / (rank + 1) if rank == 0 else epsilon / (total - 1)
+
     output = simulate(
         algorithms.weighted_sampling,
         kwargs_fn=dict(
-            sampling_fn=lambda ys, rank, total, epsilon=0.5: 1 / (rank + 1)
-            if rank == 0
-            else epsilon / (total - 1),
+            sampling_fn=sampling_fn,
             estimator_fn=estimator_fn,
         ),
     )
 elif args.method == "weighted_sampling_oracle_ranksqrt":
+
+    def sampling_fn(ys, rank, total):
+        return math.sqrt(1 / (rank + 1))
+
     output = simulate(
         algorithms.weighted_sampling_oracle,
-        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: math.sqrt(1 / (rank + 1))),
+        kwargs_fn=dict(sampling_fn=sampling_fn),
     )
 elif args.method == "weighted_sampling_oracle_rank":
+
+    def sampling_fn(ys, rank, total):
+        return 1 / (rank + 1)
+
     output = simulate(
         algorithms.weighted_sampling_oracle,
-        kwargs_fn=dict(sampling_fn=lambda ys, rank, total: 1 / (rank + 1)),
+        kwargs_fn=dict(sampling_fn=sampling_fn),
     )
 elif args.method == "ucb":
     output = simulate(
         algorithms.upper_confidence_bound,
-        kwargs_fn=dict(topk=3, c=50),
+        kwargs_fn=dict(topk=3, c=50, estimator_fn=estimator_fn),
     )
 elif args.method == "ambiguity_reduction_11":
     output = simulate(
@@ -202,13 +226,17 @@ elif args.method == "pvalue_rejects":
 elif args.method == "thompson_sampling":
     output = simulate(
         algorithms.thompson_sampling,
+        kwargs_fn=dict(estimator_fn=estimator_fn),
     )
 else:
     raise ValueError(f"Unknown method: {args.method}")
 
 
 os.makedirs("computed/04/", exist_ok=True)
-with open(f"computed/04/{args.method}_{args.method_sorter}.json", "w") as f:
+with open(
+    f"computed/04/{args.method}#{args.method_sorter}#{args.method_estimator}#{args.method_estimator_eval}.json",
+    "w",
+) as f:
     json.dump(output, f)
 
 
