@@ -116,7 +116,7 @@ def simulate(fn, kwargs_fn={}, **kwargs):
 if args.method == "uniform":
     output = simulate(algorithms.uniform)
 elif args.method == "uniform_nonsquare":
-    output = simulate(algorithms.uniform_nonsquare, accepts_budgets=True)
+    output = simulate(algorithms.uniform_nonsquare)
 elif args.method == "successive_rejects_constant":
     output = simulate(algorithms.successive_rejects, kwargs_fn=dict(phases="constant"))
 elif args.method == "weighted_sampling_rank":
@@ -135,18 +135,6 @@ elif args.method == "weighted_sampling_rankpow2":
 
     def sampling_fn(ys, rank, total):
         return 1 / ((rank + 1) ** 2)
-
-    output = simulate(
-        algorithms.weighted_sampling,
-        kwargs_fn=dict(
-            sampling_fn=sampling_fn,
-            estimator_fn=estimator_fn,
-        ),
-    )
-elif args.method == "weighted_sampling_ranksqrt":
-
-    def sampling_fn(ys, rank, total):
-        return math.sqrt(1 / (rank + 1))
 
     output = simulate(
         algorithms.weighted_sampling,
@@ -179,19 +167,19 @@ elif args.method == "weighted_sampling_epsilongreedy":
             estimator_fn=estimator_fn,
         ),
     )
-elif args.method == "weighted_sampling_oracle_ranksqrt":
+elif args.method == "weighted_sampling_oracle_rank":
 
     def sampling_fn(ys, rank, total):
-        return math.sqrt(1 / (rank + 1))
+        return 1 / (rank + 1)
 
     output = simulate(
         algorithms.weighted_sampling_oracle,
         kwargs_fn=dict(sampling_fn=sampling_fn),
     )
-elif args.method == "weighted_sampling_oracle_rank":
+elif args.method == "weighted_sampling_oracle_rankpow2":
 
     def sampling_fn(ys, rank, total):
-        return 1 / (rank + 1)
+        return 1 / ((rank + 1) ** 2)
 
     output = simulate(
         algorithms.weighted_sampling_oracle,
@@ -239,61 +227,5 @@ with open(
 ) as f:
     json.dump(output, f)
 
-
-"""
-rsync -azP --filter=":- .gitignore" --exclude .git/ . euler:/cluster/work/sachan/vilem/evaluation-bandit
-rsync -azP euler:/cluster/work/sachan/vilem/evaluation-bandit/computed/04/ ./computed/04/
-
-function sbatch_cpu() {
-    JOB_NAME=$1;
-    JOB_WRAP=$2;
-    mkdir -p logs
-
-    sbatch \
-    -J $JOB_NAME \
-    --output=logs/%x.out --error=logs/%x.err \
-	--mail-type END \
-	--mail-user vilem.zouhar@gmail.com \
-        --ntasks-per-node=1 \
-        --cpus-per-task=100 \
-        --mem-per-cpu=600M \
-        --time=0-4 \
-        --wrap="$JOB_WRAP";
-}
-
-function sbatch_gpu_bigmem() {
-    JOB_NAME=$1;
-    JOB_WRAP=$2;
-    mkdir -p logs
-
-    sbatch \
-    -J $JOB_NAME \
-    --output=logs/%x.out --error=logs/%x.err \
-    --gpus=1 --gres=gpumem:22g \
-	--mail-type END \
-	--mail-user vilem.zouhar@gmail.com \
-        --ntasks-per-node=1 \
-        --cpus-per-task=20 \
-        --mem-per-cpu=6G \
-        --time=0-4 \
-        --wrap="$JOB_WRAP";
-}
-
-python3 scripts/04a-simulation_compute.py --method uniform_nonsquare --method-sorter random --seeds 100
-python3 scripts/04a-simulation_compute.py --method weighted_sampling_rank --method-sorter random --seeds 100
-python3 scripts/04a-simulation_compute.py --method weighted_sampling_oracle_rank --method-sorter random --seeds 100
-python3 scripts/04a-simulation_compute.py --method uniform --method-sorter random --seeds 100
-python3 scripts/04a-simulation_compute.py --method successive_rejects_constant --method-sorter random --seeds 100
-
-for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_ranksqrt weighted_sampling_rankpow2 weighted_sampling_oracle_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling; do
-for method_sorter in random metricvar metricavg diversity_bleu diversity_unigram; do
-    sbatch_cpu "simulation_${method}_${method_sorter}" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter $method_sorter --seeds 100 --max-workers 99";
-done
-done
-
-for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_oracle_rank weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb successive_halving pvalue_rejects thompson_sampling; do
-for method_sorter in cometconfidence sentinel_mqm precomet_diffdisc diversity_lm; do
-    sbatch_gpu_bigmem "simulation_${method}_${method_sorter}" "python3 scripts/04a-simulation_compute.py --method $method --method-sorter $method_sorter --seeds 1 --max-workers 99";
-done
-done
-"""
+for key in ["wtau", "evalfocus", "tau", "avg_pval"]:
+    print(key, statistics.mean([x[key] for x in output]))

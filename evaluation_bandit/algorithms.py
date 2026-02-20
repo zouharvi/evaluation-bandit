@@ -160,11 +160,14 @@ def weighted_sampling(
     }
     models = list(data[0]["scores"])
     cost = sum([len(model_scores[model]) for model in models])
-    models.sort(key=lambda m: statistics.mean(model_scores[m]), reverse=True)
 
     output = []
     # active learning phase
     while len(budgets) > 0:
+        # we want to estimate given the context of all models, not just the ones running
+        model_estimate = estimator_fn(model_scores)
+        models.sort(key=model_estimate.get, reverse=True)
+
         model = random.choices(
             models,
             weights=[
@@ -184,10 +187,6 @@ def weighted_sampling(
         models = [
             model for model in model_scores if len(model_scores[model]) < len(data)
         ]
-        model_estimate = estimator_fn(
-            {model: scores for model, scores in model_scores.items() if model in models}
-        )
-        models.sort(key=model_estimate.get, reverse=True)
 
         if cost >= budgets[0]:
             budgets = budgets[1:]
@@ -370,7 +369,8 @@ def upper_confidence_bound(
             ln_total = math.log(sum(len(model_scores[model]) for model in models))
 
         ucb_scores = {}
-        model_estimates = estimator_fn({model: model_scores[model] for model in models})
+        # we want to estimate given the context of all models, not just the ones running
+        model_estimates = estimator_fn(model_scores)
         for model in models:
             if variant == "ucb1":
                 # UCB = mean + c * sqrt(ln(total_counts) / model_counts)
@@ -495,7 +495,8 @@ def thompson_sampling(
         ts_samples = {}
         models = [model for model in models if len(model_scores[model]) < len(data)]
 
-        model_estimates = estimator_fn({model: model_scores[model] for model in models})
+        # we want to estimate given the context of all models, not just the ones running
+        model_estimates = estimator_fn(model_scores)
         for model in models:
             sample = random.normalvariate(
                 model_estimates[model], statistics.stdev(model_scores[model])

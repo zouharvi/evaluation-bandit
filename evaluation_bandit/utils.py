@@ -58,6 +58,8 @@ def stability(
         [model_estimates[model] for model in models]
         for model_estimates in model_estimates_all
     ]
+    if len(model_estimates_all) <= 1:
+        return float("nan")
     vals = [
         scipy.stats.weightedtau(a, b, weigher=lambda rank: 1 / (rank + 1) ** 2)[0]
         # we can't use just combinations because wtau is not symmetric

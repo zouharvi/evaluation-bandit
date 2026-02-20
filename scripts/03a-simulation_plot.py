@@ -3,8 +3,11 @@
 import json
 
 
-def read_computed(method, method_ranker):
-    with open(f"../computed/04/{method}_{method_ranker}.json", "r") as f:
+def read_computed(method, method_ranker, method_estimator, method_estimator_eval):
+    with open(
+        f"../computed/04/{method}#{method_ranker}#{method_estimator}#{method_estimator_eval}.json",
+        "r",
+    ) as f:
         return json.load(f)
 
 
@@ -12,6 +15,11 @@ outputs = [
     {
         "method_typst": "Uniform",
         "method_latex": "Uniform",
+        "method": "uniform",
+    },
+    {
+        "method_typst": "Uniform (sampling)",
+        "method_latex": None,
         "method": "uniform_nonsquare",
     },
     {
@@ -28,11 +36,6 @@ outputs = [
         "method_typst": "Sampling rank (oracle)",
         "method_latex": None,
         "method": "weighted_sampling_oracle_rank",
-    },
-    {
-        "method_typst": "Sampling rank-sqrt",
-        "method_latex": None,
-        "method": "weighted_sampling_ranksqrt",
     },
     {
         "method_typst": "Sampling rank$#none^2$",
@@ -88,28 +91,29 @@ outputs = [
 ]
 
 outputs = [
-    output | {"method_ranker": method_ranker}
+    output
+    | {
+        "method_ranker": method_ranker,
+        "method_estimator": method_estimator,
+        "method_estimator_eval": method_estimator_eval,
+    }
     for output in outputs
-    for method_ranker in [
-        "random",
-        "metricavg",
-        "metricvar",
-        "metriccons",
-        "diversity_bleu",
-        "diversity_unigram",
-        "diversity_lm",
-        # "cometconfidence",
-        # "sentinel_mqm",
-        # "precomet_diffdisc",
-    ]
+    for method_ranker in ["random", "metricavg"]
+    for method_estimator in ["additive", "count", "mean"]
+    for method_estimator_eval in ["additive", "count", "mean"]
 ]
 
 for output in outputs:
     try:
-        output["data"] = read_computed(output["method"], output["method_ranker"])
+        output["data"] = read_computed(
+            output["method"],
+            output["method_ranker"],
+            output["method_estimator"],
+            output["method_estimator_eval"],
+        )
     except FileNotFoundError:
         print(
-            f"Warning: computed file for method {output['method']}_{output['method_ranker']} not found."
+            f"Warning: computed file for method {output['method']}#{output['method_ranker']}#{output['method_estimator']}#{output['method_estimator_eval']} not found."
         )
 
 
@@ -133,7 +137,6 @@ def plot_output(outputs, label, axs, color=None):
         data_by_budget[output["budget"]].append(output)
     data_by_budget = sorted(data_by_budget.values(), key=lambda d: d[0]["budget"])
 
-    print(label)
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
@@ -165,23 +168,23 @@ def plot_output(outputs, label, axs, color=None):
 fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(8, 2.4))
 # axs = axs.flatten()
 
-output_i = 0
-for output in outputs:
-    if (
-        output["method_latex"] is None
-        or output["method_ranker"] != "random"
-        or "data" not in output
-    ):
-        continue
+outputs_to_plot = [
+    output
+    for output in outputs
+    if output["method_latex"] is not None
+    and output["method_ranker"] == "random"
+    and output["method_estimator"] == "mean"
+    and output["method_estimator_eval"] == "mean"
+    and "data" in output
+]
+
+for output_i, output in enumerate(outputs_to_plot):
     plot_output(
         output["data"],
         output["method_latex"],
         axs,
-        color="black"
-        if output["method"] == "uniform_nonsquare"
-        else f"C{output_i - 1}",
+        color="black" if output["method"] == "uniform" else f"C{output_i - 1}",
     )
-    output_i += 1
 
 for ax in axs:
     ax.spines[["top", "right"]].set_visible(False)
@@ -230,9 +233,6 @@ plt.savefig("../figures/simulation_legend.svg")
 plt.show()
 
 
-# area under curve table
-
-
 def area_under_curve(outputs, key):
     if key not in outputs[0]:
         return None
@@ -241,24 +241,6 @@ def area_under_curve(outputs, key):
         return f"{x:.1f}"
     else:
         return f"{x:.3f}"
-    # data_by_budget = collections.defaultdict(list)
-    # for output in outputs:
-    #     data_by_budget[output["budget"]].append(output)
-    # data_by_budget = sorted(data_by_budget.values(), key=lambda d: d[0]["budget"])
-
-    # x = np.trapezoid(
-    #     y=[
-    #         np.mean([x[key] for x in xs])
-    #         for xs in data_by_budget
-    #         if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 1.0
-    #     ],
-    #     x=[
-    #         xs[0]["budget"]
-    #         for xs in data_by_budget
-    #         if xs[0]["budget"] >= 0.1 and xs[0]["budget"] <= 1.0
-    #     ],
-    # )
-    # return f"{x / (1 - 0.1):.3f}"
 
 
 outputs = [x for x in outputs if "data" in x]
@@ -267,6 +249,8 @@ outputs = [
         "method": output["method"],
         "method_typst": output["method_typst"],
         "method_ranker": output["method_ranker"],
+        "method_estimator": output["method_estimator"],
+        "method_estimator_eval": output["method_estimator_eval"],
         **{
             key: area_under_curve(output["data"], key)
             for key in ["wtau", "evalfocus", "tau", "avg_pval", "stability"]
