@@ -8,10 +8,22 @@ from . import estimators
 from . import utils
 
 
-def uniform(data, budget) -> utils.ModelScores:
-    items = data[: budget // len(data[0]["scores"])]
+def uniform(data, budgets: list[int]) -> list[utils.ModelScores]:
+    items = []
+    cost = 0
+    models_count = len(data[0]["scores"])
+    data = list(data)
+    output = []
+    while budgets and data:
+        budget = budgets[0]
+        item = data.pop(0)
+        cost += item["cost"] * models_count
+        if cost >= budget:
+            budgets = budgets[1:]
+            output.append(utils.items_to_model_scores(items, average=False))
+        items.append(item)
 
-    return utils.items_to_model_scores(items, average=False)
+    return output
 
 
 def uniform_nonsquare(data, budgets: list[int]) -> list[utils.ModelScores]:
@@ -28,7 +40,7 @@ def uniform_nonsquare(data, budgets: list[int]) -> list[utils.ModelScores]:
         # find next item for the model
         item = data[len(model_scores[model])]
         model_scores[model].append(item["scores"][model])
-        cost += 1
+        cost += item["cost"]
 
         if cost >= budgets[0]:
             budgets = budgets[1:]
@@ -88,7 +100,7 @@ def successive_rejects(
                 break
             item = data.pop(0)
             for model in models:
-                cost += 1
+                cost += item["cost"]
                 model_scores[model].append(item["scores"][model])
         if break_game:
             break
@@ -129,7 +141,7 @@ def successive_halving(
             item = data.pop(0)
             for model in models:
                 model_scores[model].append(item["scores"][model])
-                cost += 1
+                cost += item["cost"]
 
         rounds -= 1
         models.sort(
@@ -159,7 +171,7 @@ def weighted_sampling(
         for model in data[0]["scores"]
     }
     models = list(data[0]["scores"])
-    cost = sum([len(model_scores[model]) for model in models])
+    cost = sum(x["cost"] for x in data[:coldstart]) * len(models)
 
     output = []
     # active learning phase
@@ -167,6 +179,11 @@ def weighted_sampling(
         # we want to estimate given the context of all models, not just the ones running
         model_estimate = estimator_fn(model_scores)
         models.sort(key=model_estimate.get, reverse=True)
+
+        if not models:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
+            continue
 
         model = random.choices(
             models,
@@ -182,7 +199,7 @@ def weighted_sampling(
         )[0]
         item = data[len(model_scores[model])]
         model_scores[model].append(item["scores"][model])
-        cost += 1
+        cost += item["cost"]
 
         models = [
             model for model in model_scores if len(model_scores[model]) < len(data)
@@ -220,10 +237,15 @@ def weighted_sampling_oracle(
         for rank, model in enumerate(models)
     }
 
-    cost = 0
+    cost = data[0]["cost"] * len(models)
     output = []
     # allocation phase
     while len(budgets) > 0:
+        if not models:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
+            continue
+
         model = random.choices(
             models,
             weights=[weights[m] for m in models],
@@ -231,7 +253,7 @@ def weighted_sampling_oracle(
         )[0]
         item = data[len(model_scores[model])]
         model_scores[model].append(item["scores"][model])
-        cost += 1
+        cost += item["cost"]
 
         models = [
             model for model, scores in model_scores.items() if len(scores) < len(data)
@@ -240,9 +262,6 @@ def weighted_sampling_oracle(
         if cost >= budgets[0]:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
-
-        if not models:
-            break
 
     return output
 
@@ -264,10 +283,9 @@ def statistical_ambiguity_reduction(
         }
         for model in data[0]["scores"]
     ]
-    cost = sum([len(model["scores"]) for model in models])
+    cost = sum(x["cost"] for x in data[:coldstart]) * len(models)
 
     def recompute_meta(model_dirty):
-        nonlocal models
         model_dirty["ci"] = utils.confidence_interval(model_dirty["scores"])
         model_dirty["ci"] = model_dirty["ci"][1] - model_dirty["ci"][0]
 
@@ -290,6 +308,11 @@ def statistical_ambiguity_reduction(
 
     output = []
     while budgets:
+        if not models:
+            budgets = budgets[1:]
+            output.append({model["model"]: list(model["scores"]) for model in models})
+            continue
+
         # rank models based on ci and neighbour p-value independently
         # then average the rank
         model_rank_ci = {
@@ -319,7 +342,7 @@ def statistical_ambiguity_reduction(
         )
         item = data[len(model["scores"])]
         model["scores"].append(item["scores"][model["model"]])
-        cost += 1
+        cost += item["cost"]
 
         recompute_meta(model)
 
@@ -357,13 +380,19 @@ def upper_confidence_bound(
     for _ in range(coldstart):
         for model in models:
             if len(model_scores[model]) < len(data):
-                score = data[len(model_scores[model])]["scores"][model]
+                item = data[len(model_scores[model])]
+                score = item["scores"][model]
                 model_scores[model].append(score)
-                cost += 1
+                cost += item["cost"]
 
     while budgets and cost < budgets[0]:
         # Calculate UCB for all models
         models = [model for model in models if len(model_scores[model]) < len(data)]
+
+        if not models:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
+            continue
 
         if variant == "ucb1":
             ln_total = math.log(sum(len(model_scores[model]) for model in models))
@@ -391,9 +420,10 @@ def upper_confidence_bound(
         selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk]
 
         for model in selected_models:
-            score = data[len(model_scores[model])]["scores"][model]
+            item = data[len(model_scores[model])]
+            score = item["scores"][model]
             model_scores[model].append(score)
-            cost += 1
+            cost += item["cost"]
 
         if cost >= budgets[0]:
             budgets = budgets[1:]
@@ -418,7 +448,12 @@ def pvalue_rejects(
     cost = 0
     output = []
 
-    while budgets and len(models) > 1:
+    while budgets:
+        if not models:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
+            continue
+
         # Round-robin sampling
         sampled_any = False
         for model in list(models):
@@ -429,7 +464,7 @@ def pvalue_rejects(
                 continue
             item = data[len(model_scores[model])]
             model_scores[model].append(item["scores"][model])
-            cost += 1
+            cost += item["cost"]
             sampled_any = True
 
             while budgets and cost >= budgets[0]:
@@ -486,14 +521,20 @@ def thompson_sampling(
     for _ in range(coldstart):
         for model in models:
             if len(model_scores[model]) < len(data):
-                score = data[len(model_scores[model])]["scores"][model]
+                item = data[len(model_scores[model])]
+                score = item["scores"][model]
                 model_scores[model].append(score)
-                cost += 1
+                cost += item["cost"]
 
     while budgets and cost < budgets[0]:
         # Generate samples for all models
         ts_samples = {}
         models = [model for model in models if len(model_scores[model]) < len(data)]
+
+        if not models:
+            budgets = budgets[1:]
+            output.append({model: list(model_scores[model]) for model in model_scores})
+            continue
 
         # we want to estimate given the context of all models, not just the ones running
         model_estimates = estimator_fn(model_scores)
@@ -509,9 +550,10 @@ def thompson_sampling(
         ]
 
         for model in selected_models:
-            score = data[len(model_scores[model])]["scores"][model]
+            item = data[len(model_scores[model])]
+            score = item["scores"][model]
             model_scores[model].append(score)
-            cost += 1
+            cost += item["cost"]
 
         if cost >= budgets[0]:
             budgets = budgets[1:]

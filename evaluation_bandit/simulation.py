@@ -16,7 +16,9 @@ def _simulate(args):
         estimator_fn,
         BUDGETS,
     ) = args
-    budgets = [int(len(data) * len(data[0]["scores"]) * b) for b in BUDGETS]
+    _sum_cost = sum(item["cost"] for item in data)
+    _models = len(data[0]["scores"])
+    budgets = [int(_sum_cost * _models * b) for b in BUDGETS]
     if "budgets" in fn.__code__.co_varnames:
         model_scores_all = fn(data, budgets=budgets, **kwargs_fn)
     elif "budget" in fn.__code__.co_varnames:
@@ -124,13 +126,15 @@ def simulate(
     return [compute_stats(cs) for cs in data_agg.values()]
 
 
-def subset2evaluate_to_sorter(**kwargs_fn):
+def subset2evaluate_to_sorter(cost_normalize=False, **kwargs_fn):
     def sorter(data):
         import subset2evaluate.select_subset
 
         # make sure unified-ish metric is present everywhere
         # combining different metrics is not an issue since each dataset has the same one
         for line in data:
+            if not cost_normalize:
+                line["cost"] = 1
             for model_v in line["scores"].values():
                 x = 0
                 for metric in ["MetricX-25", "MetricX-24", "MetricX-23", "chrF"]:
@@ -140,6 +144,11 @@ def subset2evaluate_to_sorter(**kwargs_fn):
                 model_v["metric"] = x
 
         data = subset2evaluate.select_subset.basic(list(data), **kwargs_fn)
+        # when we don't cost_normalize, this does nothing
+        data.sort(
+            key=lambda x: x["subset2evaluate_utility"] / max(1, x["cost"]),
+            reverse=True,
+        )
 
         data_by_domain = collections.defaultdict(list)
         for item in data:

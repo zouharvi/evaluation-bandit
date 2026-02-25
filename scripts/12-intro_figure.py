@@ -239,9 +239,6 @@ plt.text(
 )
 
 
-# TODO: point to last model A's item (13) and say "the last evaluated item (13th) is model A on item 5 with high score (green)"
-
-
 plt.xlim(-0.5, 9.2)
 plt.ylim(-0.3, len(progress) - 0.7)
 plt.xticks(range(10), range(1, 11))
@@ -252,3 +249,7 @@ plt.gca().spines[["top", "right"]].set_visible(False)
 plt.tight_layout(pad=0.1)
 plt.savefig("../figures/intro_figure_constrained.svg")
 plt.show()
+
+# %%
+
+# TODO: unconstrained

@@ -42,6 +42,10 @@ args = args.parse_args()
 
 if args.method_sorter == "random":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(method="random")
+elif args.method_sorter == "random_cost":
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
+        method="random", cost_normalize=True
+    )
 elif args.method_sorter == "metricvar":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_var", metric="metric"
@@ -49,6 +53,18 @@ elif args.method_sorter == "metricvar":
 elif args.method_sorter == "metricavg":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_avg", metric="metric"
+    )
+elif args.method_sorter == "humanavg":
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
+        method="metric_avg", metric="human"
+    )
+elif args.method_sorter == "metricavg_cost":
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
+        method="metric_avg", metric="metric", cost_normalize=True
+    )
+elif args.method_sorter == "humanavg_cost":
+    data_sorter_fn = simulation.subset2evaluate_to_sorter(
+        method="metric_avg", metric="human", cost_normalize=True
     )
 elif args.method_sorter == "metriccons":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(
