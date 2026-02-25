@@ -25,9 +25,9 @@ function sbatch_cpu() {
 # random metricvar metricavg diversity_bleu diversity_unigram; do
 
 for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
-for method_estimator in mean additive count; do
-for method_estimator_eval in mean additive; do
-for method_sorter in random metricavg; do
+for method_estimator in mean additive; do
+for method_estimator_eval in mean additive count; do
+for method_sorter in random metricavg metricavg_cost; do
     sbatch_cpu \
         "simulation_${method}#${method_sorter}#${method_estimator}#${method_estimator_eval}" \
         "python3 scripts/02a-simulation_compute.py --method $method --method-sorter $method_sorter --method-estimator $method_estimator --method-estimator-eval $method_estimator_eval --seeds 100 --max-workers 100" \
