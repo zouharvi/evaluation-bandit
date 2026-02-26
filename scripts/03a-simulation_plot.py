@@ -98,8 +98,8 @@ outputs = [
         "method_estimator_eval": method_estimator_eval,
     }
     for output in outputs
-    for method_ranker in ["random", "metricavg"]
-    for method_estimator in ["additive", "count", "mean"]
+    for method_ranker in ["random", "metricavg", "metricavg_cost"]
+    for method_estimator in ["additive", "mean"]
     for method_estimator_eval in ["additive", "count", "mean"]
 ]
 
