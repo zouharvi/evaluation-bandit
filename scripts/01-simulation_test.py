@@ -1,6 +1,6 @@
 # %%
 
-from evaluation_bandit import algorithms, utils, estimators
+from evaluation_bandit import algorithms, utils, estimators, simulation
 import importlib
 import random
 import statistics
@@ -49,3 +49,15 @@ model_scores = algorithms.weighted_sampling(
     (data), [budget], estimator_fn=estimators.additive
 )[0]
 print(utils.wtau(model_scores, model_scores_true))
+
+# %%
+import matplotlib.pyplot as plt
+
+data = simulation.subset2evaluate_to_sorter(
+    method="metric_avg", metric="MetricX-25", cost_normalize=True
+)(utils.load_data()[("wmt25", "cs-de_DE")])
+
+plt.hist([x["subset2evaluate_utility"] for x in data])
+plt.show()
+plt.hist([x["cost"] for x in data])
+plt.show()

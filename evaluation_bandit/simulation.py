@@ -145,8 +145,12 @@ def subset2evaluate_to_sorter(cost_normalize=False, **kwargs_fn):
 
         data = subset2evaluate.select_subset.basic(list(data), **kwargs_fn)
         # when we don't cost_normalize, this does nothing
+        # make sure that utility is positive
+        min_utility = min(x["subset2evaluate_utility"] for x in data)
+        min_cost = min(x["cost"] for x in data)
         data.sort(
-            key=lambda x: x["subset2evaluate_utility"] / max(1, x["cost"]),
+            key=lambda x: (x["subset2evaluate_utility"] - min_utility)
+            / (x["cost"] - min_cost + 0.1),
             reverse=True,
         )
 
