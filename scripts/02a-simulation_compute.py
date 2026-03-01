@@ -204,7 +204,7 @@ elif args.method == "weighted_sampling_oracle_rankpow2":
 elif args.method == "ucb":
     output = simulate(
         algorithms.upper_confidence_bound,
-        kwargs_fn=dict(topk=3, c=50, estimator_fn=estimator_fn),
+        kwargs_fn=dict(topk=1, c=100 * math.sqrt(2), estimator_fn=estimator_fn),
     )
 elif args.method == "ambiguity_reduction_11":
     output = simulate(

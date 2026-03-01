@@ -1,15 +1,16 @@
 import statistics
 from typing import Callable
 import numpy as np
+from . import utils
 
-Estimator = Callable[dict[str, list[float]], dict[str, float]]
+Estimator = Callable[[utils.ModelScores], utils.ModelEstimates]
 
 
-def mean(model_scores: dict[str, list[float]]) -> dict[str, float]:
+def mean(model_scores: utils.ModelScores) -> utils.ModelEstimates:
     return {model: statistics.mean(scores) for model, scores in model_scores.items()}
 
 
-def count(model_scores: dict[str, list[float]]) -> dict[str, float]:
+def count(model_scores: utils.ModelScores) -> utils.ModelEstimates:
     """
     Useful for ranking based on when an item was eliminated etc.
     """
