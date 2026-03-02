@@ -136,7 +136,9 @@ elif args.method == "uniform_nonsquare":
 elif args.method == "greedy_oracle":
     output = simulate(algorithms.greedy_oracle)
 elif args.method == "greedy_oracle_invariant":
-    output = simulate(algorithms.greedy_oracle_invariant)
+    output = simulate(
+        algorithms.greedy_oracle_invariant, kwargs_fn=dict(shuffle_repetitions=2)
+    )
 elif args.method == "successive_rejects_constant":
     output = simulate(algorithms.successive_rejects, kwargs_fn=dict(phases="constant"))
 elif args.method == "weighted_sampling_rank":

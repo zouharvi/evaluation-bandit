@@ -60,7 +60,7 @@ outputs = [
     {
         "method_typst": "Greedy Oracle",
         "method_latex": "Greedy Oracle",
-        "method": "greedy_oracle",
+        "method": "greedy_oracle_invariant",
     },
     # only for extra
     {

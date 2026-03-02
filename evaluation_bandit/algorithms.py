@@ -344,7 +344,7 @@ def statistical_ambiguity_reduction(
 def upper_confidence_bound(
     data,
     budgets: list[int],
-    c: float = math.sqrt(2),
+    c: float = 100 * math.sqrt(2),
     coldstart: int = 5,
     topk: int = 1,
     variant: Literal["ucb1", "lilucb"] = "ucb1",
@@ -602,6 +602,7 @@ def greedy_oracle_invariant(
     budgets: list[int],
     coldstart=5,
     batch_size=10,
+    shuffle_repetitions=3,
     estimator_fn: Callable[[list[float]], float] = estimators.mean,
 ) -> list[utils.ModelScores]:
     """
@@ -639,7 +640,7 @@ def greedy_oracle_invariant(
         lookahead_wtau = collections.defaultdict(list)
         # create stochasticity to not overfit to data ordering
         # shuffle multiple times
-        for _ in range(5):
+        for _ in range(shuffle_repetitions):
             random.shuffle(data)
             for model in models:
                 # extend by batch size and compute wtau
