@@ -4,7 +4,6 @@ from evaluation_bandit import algorithms, utils, estimators, simulation
 import importlib
 import random
 import statistics
-import math
 
 
 def shuffled(ys):
@@ -16,32 +15,32 @@ def shuffled(ys):
 data = utils.data_humanscores_only(utils.load_data()[("wmt25", "cs-de_DE")])
 print(len(data))
 
+for line in data:
+    line["cost"] = 1
+
 # %%
 importlib.reload(algorithms)
 importlib.reload(utils)
 importlib.reload(estimators)
 
-budget = 400
-print("                     ef   tau")
+budget = 100
 
 data = shuffled(data)
-data.sort(key=lambda x: statistics.mean(x["scores"].values()))
-
-model_scores_true = {
-    model: [item["scores"][model] for item in data] for model in data[0]["scores"]
-}
+# data.sort(key=lambda x: statistics.mean(x["scores"].values()))
+model_scores_true = utils.items_to_model_scores(data)
 
 
 def eval_both(model_scores):
-    return (
-        f"{utils.evalfocus(model_scores, model_scores_true, budget=budget):.3f}",
-        f"{utils.wtau(model_scores, model_scores_true):.3f}",
-    )
+    wtau = utils.wtau(estimators.mean(model_scores), estimators.mean(model_scores_true))
+    print(f"{wtau:.3f}")
 
 
-model_scores = algorithms.uniform_nonsquare((data), [budget])[0]
-print(model_scores)
-print(utils.wtau(estimators.mean(model_scores), estimators.mean(model_scores_true)))
+model_scores = algorithms.uniform(data, [budget])[0]
+eval_both(model_scores)
+model_scores = algorithms.greedy_oracle(data, [budget], batch_size=10)[0]
+eval_both(model_scores)
+model_scores = algorithms.greedy_oracle_invariant(data, [budget], batch_size=10)[0]
+eval_both(model_scores)
 
 
 # %%

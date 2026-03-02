@@ -57,7 +57,6 @@ def simulate(
 ):
     print("Running", fn.__name__, "with", kwargs_fn)
 
-    # BUDGETS = np.linspace(0.1, 0.9, 20, dtype=float)
     BUDGETS = np.linspace(0.1, 1.0, 20, dtype=float)
 
     data_all = data_all_fn()

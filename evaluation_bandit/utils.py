@@ -52,6 +52,7 @@ def tau(model_estimates1: ModelEstimates, model_estimates2: ModelEstimates) -> f
 
 def stability(
     model_estimates_all: list[ModelEstimates],
+    weigher=lambda rank: 1 / (rank + 1) ** 2,
 ) -> float:
     models = model_estimates_all[0].keys()
     model_estimates_all = [
@@ -61,7 +62,7 @@ def stability(
     if len(model_estimates_all) <= 1:
         return float("nan")
     vals = [
-        scipy.stats.weightedtau(a, b, weigher=lambda rank: 1 / (rank + 1) ** 2)[0]
+        scipy.stats.weightedtau(a, b, weigher=weigher)[0]
         # we can't use just combinations because wtau is not symmetric
         for a, b in itertools.product(model_estimates_all, repeat=2)
     ]
@@ -80,7 +81,7 @@ def wtau(
     val: float = scipy.stats.weightedtau(
         [model_estimates1[model] for model in model_estimates1],
         [model_estimates2[model] for model in model_estimates1],
-        weigher=lambda rank: 1 / (rank + 1) ** 2,
+        weigher=weigher,
     )[0]  # type: ignore
     if np.isnan(val):
         return 0.0
@@ -171,6 +172,19 @@ def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
             sorted(
                 model_scores.keys(),
                 key=lambda m: model_scores[m],
+                reverse=True,
+            ),
+        )
+    }
+
+
+def model_estimates_to_model_ranking(model_estimates: ModelEstimates) -> dict[str, int]:
+    return {
+        model: rank
+        for rank, model in enumerate(
+            sorted(
+                model_estimates.keys(),
+                key=lambda m: model_estimates[m],
                 reverse=True,
             ),
         )

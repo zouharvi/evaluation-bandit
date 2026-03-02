@@ -24,7 +24,7 @@ function sbatch_cpu() {
 
 # random metricvar metricavg diversity_bleu diversity_unigram; do
 
-for method in uniform uniform_nonsquare successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
+for method in uniform uniform_nonsquare greedy_oracle successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
 for method_estimator in mean additive; do
 for method_estimator_eval in mean additive count; do
 for method_sorter in random metricavg metricavg_cost; do

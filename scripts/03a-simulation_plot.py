@@ -44,7 +44,7 @@ outputs = [
     },
     {
         "method_typst": "Sampling $epsilon$-Greedy",
-        "method_latex": "Sampling $\\epsilon$-Greedy",
+        "method_latex": None,
         "method": "weighted_sampling_epsilongreedy",
     },
     {
@@ -56,6 +56,11 @@ outputs = [
         "method_typst": "Upper Confidence Bound",
         "method_latex": "Upper Confidence Bound",
         "method": "ucb",
+    },
+    {
+        "method_typst": "Greedy Oracle",
+        "method_latex": "Greedy Oracle",
+        "method": "greedy_oracle",
     },
     # only for extra
     {

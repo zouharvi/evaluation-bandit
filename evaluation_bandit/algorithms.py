@@ -175,15 +175,15 @@ def weighted_sampling(
 
     output = []
     # active learning phase
-    while len(budgets) > 0:
-        # we want to estimate given the context of all models, not just the ones running
-        model_estimate = estimator_fn(model_scores)
-        models.sort(key=model_estimate.get, reverse=True)
-
-        if not models:
+    while budgets:
+        if cost >= budgets[0] or not models:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
             continue
+
+        # we want to estimate given the context of all models, not just the ones running
+        model_estimate = estimator_fn(model_scores)
+        models.sort(key=model_estimate.get, reverse=True)
 
         model = random.choices(
             models,
@@ -204,10 +204,6 @@ def weighted_sampling(
         models = [
             model for model in model_scores if len(model_scores[model]) < len(data)
         ]
-
-        if cost >= budgets[0]:
-            budgets = budgets[1:]
-            output.append({model: list(model_scores[model]) for model in model_scores})
 
     return output
 
@@ -240,8 +236,8 @@ def weighted_sampling_oracle(
     cost = data[0]["cost"] * len(models)
     output = []
     # allocation phase
-    while len(budgets) > 0:
-        if not models:
+    while budgets:
+        if cost >= budgets[0] or not models:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
             continue
@@ -258,10 +254,6 @@ def weighted_sampling_oracle(
         models = [
             model for model, scores in model_scores.items() if len(scores) < len(data)
         ]
-
-        if cost >= budgets[0]:
-            budgets = budgets[1:]
-            output.append({model: list(model_scores[model]) for model in model_scores})
 
     return output
 
@@ -308,7 +300,7 @@ def statistical_ambiguity_reduction(
 
     output = []
     while budgets:
-        if not models:
+        if cost >= budgets[0] or not models:
             budgets = budgets[1:]
             output.append({model["model"]: list(model["scores"]) for model in models})
             continue
@@ -346,10 +338,6 @@ def statistical_ambiguity_reduction(
 
         recompute_meta(model)
 
-        if cost >= budgets[0]:
-            budgets = budgets[1:]
-            output.append({model["model"]: list(model["scores"]) for model in models})
-
     return output
 
 
@@ -379,20 +367,17 @@ def upper_confidence_bound(
     # Cold start: sample each model coldstart times
     for _ in range(coldstart):
         for model in models:
-            if len(model_scores[model]) < len(data):
-                item = data[len(model_scores[model])]
-                score = item["scores"][model]
-                model_scores[model].append(score)
-                cost += item["cost"]
+            item = data[len(model_scores[model])]
+            model_scores[model].append(item["scores"][model])
+            cost += item["cost"]
 
-    while budgets and cost < budgets[0]:
-        # Calculate UCB for all models
-        models = [model for model in models if len(model_scores[model]) < len(data)]
-
-        if not models:
+    while budgets:
+        if cost >= budgets[0] or not models:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
             continue
+
+        # Calculate UCB for all models
 
         if variant == "ucb1":
             ln_total = math.log(sum(len(model_scores[model]) for model in models))
@@ -421,13 +406,10 @@ def upper_confidence_bound(
 
         for model in selected_models:
             item = data[len(model_scores[model])]
-            score = item["scores"][model]
-            model_scores[model].append(score)
+            model_scores[model].append(item["scores"][model])
             cost += item["cost"]
 
-        if cost >= budgets[0]:
-            budgets = budgets[1:]
-            output.append({model: list(model_scores[model]) for model in model_scores})
+        models = [model for model in models if len(model_scores[model]) < len(data)]
 
     return output
 
@@ -449,36 +431,25 @@ def pvalue_rejects(
     output = []
 
     while budgets:
-        if not models:
+        if cost >= budgets[0] or all(
+            len(model_scores[model]) >= len(data) for model in models
+        ):
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
             continue
 
         # Round-robin sampling
-        sampled_any = False
         for model in list(models):
-            if not budgets:
-                break
             # get next item for the model
             if len(model_scores[model]) >= len(data):
                 continue
             item = data[len(model_scores[model])]
             model_scores[model].append(item["scores"][model])
             cost += item["cost"]
-            sampled_any = True
-
-            while budgets and cost >= budgets[0]:
-                budgets = budgets[1:]
-                output.append(
-                    {model: list(model_scores[model]) for model in model_scores}
-                )
-
-        if not sampled_any:
-            break
 
         models.sort(key=lambda m: statistics.mean(model_scores[m]))
 
-        # allow for pruning multiple models at the same time if there's difference
+        # allow for pruning multiple models at the same time if there's a statistical difference
         while len(models) > 1:
             worst_model = models[0]
             next_worst_model = models[1]
@@ -520,21 +491,19 @@ def thompson_sampling(
     # Cold start: sample each model coldstart times
     for _ in range(coldstart):
         for model in models:
-            if len(model_scores[model]) < len(data):
-                item = data[len(model_scores[model])]
-                score = item["scores"][model]
-                model_scores[model].append(score)
-                cost += item["cost"]
+            item = data[len(model_scores[model])]
+            model_scores[model].append(item["scores"][model])
+            cost += item["cost"]
 
-    while budgets and cost < budgets[0]:
-        # Generate samples for all models
-        ts_samples = {}
-        models = [model for model in models if len(model_scores[model]) < len(data)]
-
-        if not models:
+    while budgets:
+        if cost >= budgets[0] or not models:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
             continue
+
+        # Generate samples for all models
+        ts_samples = {}
+        models = [model for model in models if len(model_scores[model]) < len(data)]
 
         # we want to estimate given the context of all models, not just the ones running
         model_estimates = estimator_fn(model_scores)
@@ -551,12 +520,144 @@ def thompson_sampling(
 
         for model in selected_models:
             item = data[len(model_scores[model])]
-            score = item["scores"][model]
-            model_scores[model].append(score)
+            model_scores[model].append(item["scores"][model])
             cost += item["cost"]
 
-        if cost >= budgets[0]:
+    return output
+
+
+def greedy_oracle(
+    data,
+    budgets: list[int],
+    coldstart=5,
+    batch_size=10,
+    estimator_fn: Callable[[list[float]], float] = estimators.mean,
+) -> list[utils.ModelScores]:
+    """
+    Greedy Oracle for Best Arm Identification. This version massively overfits to variance.
+    """
+    # Initialize data and models
+    data = list(data)
+    models = list(data[0]["scores"].keys())
+
+    # Track scores and counts for each model
+    model_scores = {model: [] for model in models}
+    model_estimates_true = estimator_fn(
+        utils.items_to_model_scores(data, average=False)
+    )
+
+    # To keep track of where we are in the data for each model
+    cost = 0
+    output = []
+
+    # Cold start: sample each model coldstart times
+    for _ in range(coldstart):
+        for model in models:
+            item = data[len(model_scores[model])]
+            model_scores[model].append(item["scores"][model])
+            cost += item["cost"]
+
+    while budgets:
+        if cost >= budgets[0] or not models:
             budgets = budgets[1:]
             output.append({model: list(model_scores[model]) for model in model_scores})
+            continue
+
+        lookahead_wtau = []
+        for model in models:
+            # extend by batch size and compute wtau
+            model_scores_local = {
+                _model: scores
+                + (
+                    [
+                        x["scores"][_model]
+                        for x in data[len(scores) : len(scores) + batch_size]
+                    ]
+                    if model == _model
+                    else []
+                )
+                for _model, scores in model_scores.items()
+            }
+            wtau = utils.wtau(
+                estimator_fn(model_scores_local),
+                model_estimates_true,
+            )
+            lookahead_wtau.append((wtau, model))
+
+        # take the model with the highest wtau
+        model_best = max(lookahead_wtau, key=lambda x: x[0])[1]
+        scores_to_add = data[
+            len(model_scores[model_best]) : len(model_scores[model_best]) + batch_size
+        ]
+        model_scores[model_best] += [x["scores"][model_best] for x in scores_to_add]
+        cost += sum([x["cost"] for x in scores_to_add])
+
+        models = [model for model in models if len(model_scores[model]) < len(data)]
+
+    return output
+
+
+def greedy_oracle_invariant(
+    data,
+    budgets: list[int],
+    coldstart=5,
+    batch_size=10,
+    estimator_fn: Callable[[list[float]], float] = estimators.mean,
+) -> list[utils.ModelScores]:
+    """
+    Greedy Oracle for Best Arm Identification invariant to data ordering.
+    """
+    # Initialize data and models
+    data = list(data)
+    data_orig = list(data)
+    models = list(data[0]["scores"].keys())
+
+    if not all([x["cost"] == 1 for x in data]):
+        raise ValueError("All data must have cost 1")
+
+    # Track scores and counts for each model
+    model_mask = {model: coldstart for model in models}
+    model_estimates_true = estimator_fn(
+        utils.items_to_model_scores(data, average=False)
+    )
+
+    def mask_to_model_scores(mask, data):
+        return {
+            model: [x["scores"][model] for x in data[: mask[model]]] for model in mask
+        }
+
+    # To keep track of where we are in the data for each model
+    cost = coldstart * len(models)
+    output = []
+
+    while budgets:
+        if cost >= budgets[0] or not models:
+            budgets = budgets[1:]
+            output.append(mask_to_model_scores(model_mask, data_orig))
+            continue
+
+        lookahead_wtau = collections.defaultdict(list)
+        # create stochasticity to not overfit to data ordering
+        # shuffle multiple times
+        for _ in range(5):
+            random.shuffle(data)
+            for model in models:
+                # extend by batch size and compute wtau
+                model_mask_local = model_mask | {model: model_mask[model] + batch_size}
+                wtau = utils.wtau(
+                    estimator_fn(mask_to_model_scores(model_mask_local, data)),
+                    model_estimates_true,
+                )
+                lookahead_wtau[model].append(wtau)
+
+        # take the model with the highest wtau
+        lookahead_wtau = {
+            model: statistics.mean(wtaus) for model, wtaus in lookahead_wtau.items()
+        }
+        model_best = max(lookahead_wtau, key=lookahead_wtau.get)
+        model_mask[model_best] += batch_size
+        cost += batch_size
+
+        models = [model for model in models if model_mask[model] < len(data_orig)]
 
     return output
