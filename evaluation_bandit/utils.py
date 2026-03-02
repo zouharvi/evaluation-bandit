@@ -151,16 +151,16 @@ def model_clusters(model_scores: ModelScores) -> float:
 
 
 def items_to_model_scores(data: list[dict], average=False) -> ModelScores:
-    model_ranking = collections.defaultdict(list)
+    model_scores = collections.defaultdict(list)
     for item in data:
         for model, score in item["scores"].items():
-            model_ranking[model].append(score)
+            model_scores[model].append(score)
     if average:
         return {
-            model: statistics.mean(scores) for model, scores in model_ranking.items()
+            model: statistics.mean(scores) for model, scores in model_scores.items()
         }
     else:
-        return model_ranking
+        return model_scores
 
 
 def items_to_model_ranking(data: list[dict]) -> dict[str, int]:
