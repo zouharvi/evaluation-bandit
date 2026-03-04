@@ -25,9 +25,10 @@ function sbatch_cpu() {
 # random metricvar metricavg diversity_bleu diversity_unigram; do
 
 for method in uniform uniform_nonsquare greedy_oracle greedy_oracle_invariant successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
-for method in greedy_oracle_invariant; do
+# TODO: run and then get main simulation results(03a-) but also distribution (05a-) based on stored model_estimates
+for method in weighted_sampling_rank greedy_oracle greedy_oracle_invariant; do
 for method_estimator in mean additive; do
-for method_estimator_eval in mean additive count; do
+for method_estimator_eval in mean additive; do
 for method_sorter in random metricavg metricavg_cost; do
     sbatch_cpu \
         "simulation_${method}#${method_sorter}#${method_estimator}#${method_estimator_eval}" \
@@ -37,6 +38,8 @@ done
 done
 done
 done
+
+python3 scripts/02a-simulation_compute.py --method "greedy_oracle_invariant" --method-sorter "random" --method-estimator "mean" --method-estimator-eval "mean" --seeds 1 --max-workers 20
 
 
 # secondary appendix results

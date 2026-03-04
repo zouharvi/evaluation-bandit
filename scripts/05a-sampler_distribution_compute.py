@@ -10,14 +10,17 @@ import math
 import concurrent
 import os
 import pickle
+import importlib
+
+importlib.reload(algorithms)
 
 
 data_all = utils.data_humanscores_only(utils.load_data())
-# KEYS = [
-#     ("wmt25", "cs-de_DE"),
-#     ("wmt25", "cs-uk_UA"),
-# ]
-# data_all = {k: data_all[k] for k in KEYS}
+KEYS = [
+    ("wmt25", "cs-de_DE"),
+    # ("wmt25", "cs-uk_UA"),
+]
+data_all = {k: data_all[k] for k in KEYS}
 for data in data_all.values():
     for line in data:
         line["cost"] = 1
@@ -36,8 +39,11 @@ def run_simulation(args):
     results_local["weighted_sampling"] += algorithms.weighted_sampling(
         data_local, budgets=budgets
     )
-    results_local["greedy_oracle_invariant"] += algorithms.greedy_oracle_invariant(
-        data_local, budgets=budgets, batch_size=1, shuffle_repetitions=10
+    results_local["greedy_oracle_invariant"] += algorithms.greedy_oracle(
+        data_local,
+        budgets=budgets,
+        batch_size=25,
+        batch_size_lookahead=50,
     )
     results_local["ucb"] += algorithms.upper_confidence_bound(
         data_local,
@@ -108,5 +114,6 @@ ax.set_yticks([])
 ax.set_xlabel(r"rank${}_m$")
 ax.set_ylabel(r"Number of items $|R_m|$")
 ax.spines[["top", "right"]].set_visible(False)
+# plt.legend()
 plt.tight_layout()
 plt.show()

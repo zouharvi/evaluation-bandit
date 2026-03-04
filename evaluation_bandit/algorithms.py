@@ -183,7 +183,7 @@ def weighted_sampling(
 
         # we want to estimate given the context of all models, not just the ones running
         model_estimate = estimator_fn(model_scores)
-        models.sort(key=model_estimate.get, reverse=True)
+        models.sort(key=model_estimate.get, reverse=True) # type: ignore
 
         model = random.choices(
             models,
@@ -348,7 +348,7 @@ def upper_confidence_bound(
     coldstart: int = 5,
     topk: int = 1,
     variant: Literal["ucb1", "lilucb"] = "ucb1",
-    estimator_fn: Callable[[list[float]], float] = estimators.mean,
+    estimator_fn: estimators.Estimator = estimators.mean,
 ) -> list[utils.ModelScores]:
     """
     Upper Confidence Bound (UCB1) or lil' UCB algorithm.
@@ -388,7 +388,7 @@ def upper_confidence_bound(
         for model in models:
             if variant == "ucb1":
                 # UCB = mean + c * sqrt(ln(total_counts) / model_counts)
-                exploration = c * math.sqrt(ln_total / len(model_scores[model]))
+                exploration = c * math.sqrt(ln_total / len(model_scores[model])) # type: ignore
             elif variant == "lilucb":
                 # lil' UCB = mean + c * sqrt(ln(ln(model_counts)) / model_counts)
                 # using max(..., 3) to ensure log(log(n)) > 0
@@ -402,7 +402,7 @@ def upper_confidence_bound(
             ucb_scores[model] = model_estimates[model] + exploration
 
         # Select topk models
-        selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk]
+        selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk] # type: ignore
 
         for model in selected_models:
             item = data[len(model_scores[model])]
@@ -472,7 +472,7 @@ def thompson_sampling(
     budgets: list[int],
     coldstart=5,
     rank_top_k=1,
-    estimator_fn: Callable[[list[float]], float] = estimators.mean,
+    estimator_fn: estimators.Estimator = estimators.mean,
 ) -> list[utils.ModelScores]:
     """
     Thompson Sampling for Best Arm Identification.
@@ -514,9 +514,7 @@ def thompson_sampling(
             ts_samples[model] = sample
 
         # Select topk models
-        selected_models = sorted(ts_samples, key=ts_samples.get, reverse=True)[
-            :rank_top_k
-        ]
+        selected_models = sorted(ts_samples, key=ts_samples.get, reverse=True)[:rank_top_k] # type: ignore
 
         for model in selected_models:
             item = data[len(model_scores[model])]
@@ -531,14 +529,21 @@ def greedy_oracle(
     budgets: list[int],
     coldstart=5,
     batch_size=10,
-    estimator_fn: Callable[[list[float]], float] = estimators.mean,
+    batch_size_lookahead: int | None = None,
+    estimator_fn: estimators.Estimator = estimators.mean,
 ) -> list[utils.ModelScores]:
     """
     Greedy Oracle for Best Arm Identification. This version massively overfits to variance.
     """
+    if batch_size_lookahead is None:
+        batch_size_lookahead = batch_size
+
     # Initialize data and models
     data = list(data)
     models = list(data[0]["scores"].keys())
+
+    if not all([x["cost"] == 1 for x in data]):
+        raise ValueError("All data must have cost 1")
 
     # Track scores and counts for each model
     model_scores = {model: [] for model in models}
@@ -566,17 +571,11 @@ def greedy_oracle(
         lookahead_wtau = []
         for model in models:
             # extend by batch size and compute wtau
-            model_scores_local = {
-                _model: scores
-                + (
-                    [
-                        x["scores"][_model]
-                        for x in data[len(scores) : len(scores) + batch_size]
-                    ]
-                    if model == _model
-                    else []
-                )
-                for _model, scores in model_scores.items()
+            model_scores_local = model_scores | {
+                model: [
+                    x["scores"][model]
+                    for x in data[: len(model_scores[model]) + batch_size_lookahead]
+                ]
             }
             wtau = utils.wtau(
                 estimator_fn(model_scores_local),
@@ -602,33 +601,35 @@ def greedy_oracle_invariant(
     budgets: list[int],
     coldstart=5,
     batch_size=10,
-    shuffle_repetitions=3,
-    estimator_fn: Callable[[list[float]], float] = estimators.mean,
+    batch_size_lookahead: int | None = None,
+    shuffle_repetitions=5,
+    estimator_fn: estimators.Estimator = estimators.mean,
 ) -> list[utils.ModelScores]:
     """
     Greedy Oracle for Best Arm Identification invariant to data ordering.
     """
-    # Initialize data and models
-    data = list(data)
-    data_orig = list(data)
-    models = list(data[0]["scores"].keys())
+    if batch_size_lookahead is None:
+        batch_size_lookahead = batch_size
 
-    if not all([x["cost"] == 1 for x in data]):
-        raise ValueError("All data must have cost 1")
+    # Initialize data and models
+    data_orig = list(data)
+    data_shuf = list(data)
+    models = list(data[0]["scores"].keys())
 
     # Track scores and counts for each model
     model_mask = {model: coldstart for model in models}
     model_estimates_true = estimator_fn(
-        utils.items_to_model_scores(data, average=False)
+        utils.items_to_model_scores(data_orig, average=False)
     )
 
     def mask_to_model_scores(mask, data):
         return {
-            model: [x["scores"][model] for x in data[: mask[model]]] for model in mask
+            model: [x["scores"][model] for x in data[:count]]
+            for model, count in mask.items()
         }
 
     # To keep track of where we are in the data for each model
-    cost = coldstart * len(models)
+    cost = sum(x["cost"] for x in data[:coldstart]) * len(models)
     output = []
 
     while budgets:
@@ -641,12 +642,23 @@ def greedy_oracle_invariant(
         # create stochasticity to not overfit to data ordering
         # shuffle multiple times
         for _ in range(shuffle_repetitions):
-            random.shuffle(data)
+            random.shuffle(data_shuf)
+
+            # extend by batch size and compute wtau
+            model_scores = {
+                model: [x["scores"][model] for x in data_shuf[: model_mask[model]]]
+                for model in model_mask
+            }
+            model_scores_ext = {
+                model: [
+                    x["scores"][model]
+                    for x in data_shuf[: model_mask[model] + batch_size_lookahead]
+                ]
+                for model in model_mask
+            }
             for model in models:
-                # extend by batch size and compute wtau
-                model_mask_local = model_mask | {model: model_mask[model] + batch_size}
                 wtau = utils.wtau(
-                    estimator_fn(mask_to_model_scores(model_mask_local, data)),
+                    estimator_fn(model_scores | {model: model_scores_ext[model]}),
                     model_estimates_true,
                 )
                 lookahead_wtau[model].append(wtau)
@@ -655,10 +667,94 @@ def greedy_oracle_invariant(
         lookahead_wtau = {
             model: statistics.mean(wtaus) for model, wtaus in lookahead_wtau.items()
         }
-        model_best = max(lookahead_wtau, key=lookahead_wtau.get)
-        model_mask[model_best] += batch_size
-        cost += batch_size
+        model_best = max(lookahead_wtau, key=lookahead_wtau.get) # type: ignore
+        model_mask[model_best] += min(
+            batch_size, len(data_orig) - model_mask[model_best]
+        )
+        cost += sum(x["cost"] for x in data_orig[model_mask[model_best] - batch_size:model_mask[model_best]])
 
         models = [model for model in models if model_mask[model] < len(data_orig)]
+
+    return output
+
+
+def confusion_minimization(
+    data,
+    budgets: list[int],
+    coldstart=15,
+    estimator_fn: estimators.Estimator = estimators.mean,
+    sampling_fn: Callable[[list[float], int, int], float] = lambda scores, rank, total: 1 / (rank + 1),
+) -> list[utils.ModelScores]:
+    from scipy.special import ndtr
+    if estimator_fn != estimators.mean:
+        raise ValueError("Pairwise confusion minimization only supports mean estimator")
+
+    data = list(data)
+
+    # Track scores and counts for each model
+    models = {
+        model: {"scores": [], "mean": None, "var": None, "alive": True, "model": model}
+        for model in data[0]["scores"].keys()
+    }
+    output = []
+    cost = 0
+
+    # Cold start: sample each model coldstart times
+    for _ in range(coldstart):
+        for model in models:
+            item = data[len(models[model]["scores"])]
+            models[model]["scores"].append(item["scores"][model])
+            cost += item["cost"]
+
+    # update means and variances
+    for model in models:
+        models[model]["mean"] = statistics.mean(models[model]["scores"])
+        models[model]["var"] = max(statistics.variance(models[model]["scores"]), 1e-6)
+
+    while budgets:
+        if cost >= budgets[0] or not models:
+            budgets = budgets[1:]
+            output.append({model: list(models[model]["scores"]) for model in models})
+            continue
+
+        models_names = sorted(models.keys(), key=lambda x: models[x]["mean"], reverse=True) # type: ignore
+        for rank, model in enumerate(models_names):
+            models[model]["weight"] = sampling_fn(
+                models[model]["scores"],
+                rank,
+                len(models),
+            )
+
+        confusion_delta = []
+        for model1 in models.values():
+            if not model1["alive"]:
+                continue
+
+            mean1 = model1["mean"]
+            var1 = model1["var"]
+            len1 = len(model1["scores"])
+
+            confusion_delta_local = 0
+            for model2 in models.values():
+                if model1["model"] == model2["model"]:
+                    continue
+
+                # compute confusion as the probability that model1 is better than model2
+                # which is the probability that a sample from model1 is greater than a sample from model2
+                mean2 = model2["mean"]
+                var2 = model2["var"]
+                len2 = len(model2["scores"])
+                confusion_delta_local += model2["weight"] * (ndtr(abs(mean1-mean2)/math.sqrt(var1/len1+var2/len2)) - ndtr(abs(mean1-mean2)/math.sqrt(var1/(len1+10)+var2/len2)))
+
+            confusion_delta.append((model1["weight"]*confusion_delta_local, model1))
+
+        model_best = min(confusion_delta, key=lambda x: x[0])[1]
+        item = data[len(model_best["scores"])]
+        model_best["scores"].append(item["scores"][model_best["model"]])
+        model_best["mean"] = statistics.mean(model_best["scores"])
+        model_best["var"] = max(statistics.variance(model_best["scores"]), 1e-6)
+        cost += item["cost"]
+        if len(model_best["scores"]) == len(data):
+            model_best["alive"] = False
 
     return output

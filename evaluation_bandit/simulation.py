@@ -32,6 +32,14 @@ def _simulate(args):
     output = []
     for budget_p, budget, model_scores in zip(BUDGETS, budgets, model_scores_all):
         model_estimates = estimator_fn(model_scores)
+        model_estimates_count = {
+            x[0]: x[1]
+            for x in sorted(
+                estimators.count(model_scores).items(),
+                key=lambda x: model_estimates[x[0]],
+                reverse=True,
+            )
+        }
         output.append(
             {
                 "budget": budget_p,
@@ -40,6 +48,7 @@ def _simulate(args):
                 "tau": utils.tau(model_estimates, model_estimates_true),
                 "avg_pval": utils.avg_pval(model_scores),
                 "model_estimates": model_estimates,
+                "model_estimates_count": model_estimates_count,
             }
         )
     return [result | {"data_name": data_name, "seed": seed} for result in output]
@@ -106,7 +115,7 @@ def simulate(
         data_agg[(item["data_name"], item["budget"])].append(item)
 
     def compute_stats(xs):
-        keys = (
+        keys_to_aggregate = (
             "wtau",
             "evalfocus",
             "tau",
@@ -115,9 +124,10 @@ def simulate(
         out = {
             "data_name": xs[0]["data_name"],
             "budget": xs[0]["budget"],
+            "model_estimates_count": [x["model_estimates_count"] for x in xs],
         }
         out["stability"] = utils.stability([x["model_estimates"] for x in xs])
-        for key in keys:
+        for key in keys_to_aggregate:
             out[key] = np.mean([x[key] for x in xs])
             out[key + "_ci"] = utils.confidence_interval([x[key] for x in xs])
         return out

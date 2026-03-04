@@ -49,13 +49,18 @@ outputs = [
     },
     {
         "method_typst": "Sampling Bolzmann",
-        "method_latex": "Sampling Bolzmann",
+        "method_latex": None,
         "method": "weighted_sampling_bolzmann",
     },
     {
         "method_typst": "Upper Confidence Bound",
         "method_latex": "Upper Confidence Bound",
         "method": "ucb",
+    },
+    {
+        "method_typst": "Confusion Minimization",
+        "method_latex": "Confusion Minimization",
+        "method": "confusion_minimization",
     },
     {
         "method_typst": "Greedy Oracle",
@@ -164,7 +169,7 @@ def plot_output(outputs, label, axs, color=None):
                 smooth(
                     [np.mean([x[key + "_ci"][1] for x in xs]) for xs in data_by_budget]
                 ),
-                alpha=0.4,
+                alpha=0.3,
                 color=color,
                 linewidth=0.0,
             )

@@ -134,10 +134,13 @@ if args.method == "uniform":
 elif args.method == "uniform_nonsquare":
     output = simulate(algorithms.uniform_nonsquare)
 elif args.method == "greedy_oracle":
-    output = simulate(algorithms.greedy_oracle)
+    output = simulate(
+        algorithms.greedy_oracle, kwargs_fn=dict(batch_size=25, batch_size_lookahead=75)
+    )
 elif args.method == "greedy_oracle_invariant":
     output = simulate(
-        algorithms.greedy_oracle_invariant, kwargs_fn=dict(shuffle_repetitions=2)
+        algorithms.greedy_oracle_invariant,
+        kwargs_fn=dict(shuffle_repetitions=10, batch_size=25, batch_size_lookahead=75),
     )
 elif args.method == "successive_rejects_constant":
     output = simulate(algorithms.successive_rejects, kwargs_fn=dict(phases="constant"))
@@ -207,6 +210,17 @@ elif args.method == "weighted_sampling_oracle_rankpow2":
         algorithms.weighted_sampling_oracle,
         kwargs_fn=dict(sampling_fn=sampling_fn),
     )
+elif args.method == "confusion_minimization":
+    def sampling_fn(ys, rank, total):
+        return 1 / (rank + 1)**2
+
+    output = simulate(
+        algorithms.confusion_minimization,
+        kwargs_fn=dict(
+            sampling_fn=sampling_fn,
+            estimator_fn=estimator_fn,
+        ),
+    )
 elif args.method == "ucb":
     output = simulate(
         algorithms.upper_confidence_bound,
@@ -241,6 +255,8 @@ elif args.method == "thompson_sampling":
 else:
     raise ValueError(f"Unknown method: {args.method}")
 
+for key in ["wtau", "evalfocus", "tau", "avg_pval"]:
+    print(key, statistics.mean([x[key] for x in output]))
 
 os.makedirs("computed/04/", exist_ok=True)
 with open(
@@ -248,6 +264,3 @@ with open(
     "w",
 ) as f:
     json.dump(output, f)
-
-for key in ["wtau", "evalfocus", "tau", "avg_pval"]:
-    print(key, statistics.mean([x[key] for x in output]))
