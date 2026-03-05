@@ -26,7 +26,7 @@ function sbatch_cpu() {
 
 for method in uniform uniform_nonsquare greedy_oracle greedy_oracle_invariant successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
 # TODO: run and then get main simulation results(03a-) but also distribution (05a-) based on stored model_estimates
-for method in weighted_sampling_rank greedy_oracle greedy_oracle_invariant; do
+for method in greedy_oracle greedy_oracle_invariant confusion_minimization; do
 for method_estimator in mean additive; do
 for method_estimator_eval in mean additive; do
 for method_sorter in random metricavg metricavg_cost; do

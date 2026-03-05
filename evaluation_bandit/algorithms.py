@@ -744,17 +744,19 @@ def confusion_minimization(
                 mean2 = model2["mean"]
                 var2 = model2["var"]
                 len2 = len(model2["scores"])
-                confusion_delta_local += model2["weight"] * (ndtr(abs(mean1-mean2)/math.sqrt(var1/len1+var2/len2)) - ndtr(abs(mean1-mean2)/math.sqrt(var1/(len1+10)+var2/len2)))
+                confusion_delta_local += model2["weight"] * (ndtr(abs(mean1-mean2)/math.sqrt(var1/len1+var2/len2)) - ndtr(abs(mean1-mean2)/math.sqrt(var1/(len1+5)+var2/len2)))
 
             confusion_delta.append((model1["weight"]*confusion_delta_local, model1))
 
         model_best = min(confusion_delta, key=lambda x: x[0])[1]
-        item = data[len(model_best["scores"])]
-        model_best["scores"].append(item["scores"][model_best["model"]])
-        model_best["mean"] = statistics.mean(model_best["scores"])
-        model_best["var"] = max(statistics.variance(model_best["scores"]), 1e-6)
-        cost += item["cost"]
-        if len(model_best["scores"]) == len(data):
-            model_best["alive"] = False
+        for _ in range(3):
+            item = data[len(model_best["scores"])]
+            model_best["scores"].append(item["scores"][model_best["model"]])
+            model_best["mean"] = statistics.mean(model_best["scores"])
+            model_best["var"] = max(statistics.variance(model_best["scores"]), 1e-6)
+            cost += item["cost"]
+            if len(model_best["scores"]) == len(data):
+                model_best["alive"] = False
+                break
 
     return output

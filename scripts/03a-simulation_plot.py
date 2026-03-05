@@ -53,18 +53,18 @@ outputs = [
         "method": "weighted_sampling_bolzmann",
     },
     {
-        "method_typst": "Upper Confidence Bound",
-        "method_latex": "Upper Confidence Bound",
+        "method_typst": "Upper confidence bound",
+        "method_latex": "Upper confidence bound",
         "method": "ucb",
     },
     {
-        "method_typst": "Confusion Minimization",
-        "method_latex": "Confusion Minimization",
+        "method_typst": "Confusion minimization",
+        "method_latex": "Confusion minimization",
         "method": "confusion_minimization",
     },
     {
-        "method_typst": "Greedy Oracle",
-        "method_latex": "Greedy Oracle",
+        "method_typst": "Greedy oracle",
+        "method_latex": "Greedy oracle",
         "method": "greedy_oracle_invariant",
     },
     # only for extra
@@ -150,7 +150,7 @@ def plot_output(outputs, label, axs, color=None):
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
-        ["wtau", "stability", "evalfocus"],
+        ["wtau", "stability"],
     ):
         ax.plot(
             xs,
@@ -175,7 +175,7 @@ def plot_output(outputs, label, axs, color=None):
             )
 
 
-fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(8, 2.4))
+fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(6, 2.4))
 # axs = axs.flatten()
 
 outputs_to_plot = [
@@ -210,9 +210,9 @@ axs[0].set_ylabel(r"Ranking ($\tau_\omega$)", labelpad=-5)
 axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 axs[1].set_ylim(0.88, None)
 axs[1].set_ylabel(r"Stability ($\tau_\omega$)", labelpad=-5)
-axs[2].set_ylim(50, None)
-axs[2].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
-axs[2].set_ylabel("\nEvaluation focus", labelpad=1)
+# axs[2].set_ylim(50, None)
+# axs[2].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
+# axs[2].set_ylabel("\nEvaluation focus", labelpad=1)
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
@@ -221,7 +221,7 @@ plt.show()
 
 
 # plot only legend
-fig_legend = plt.figure(figsize=(8, 0.4))
+fig_legend = plt.figure(figsize=(2, 2.4))
 handles, labels = axs[0].get_legend_handles_labels()
 # make the lines three times as thick
 for handle in handles:
@@ -231,7 +231,7 @@ fig_legend.legend(
     handles,
     labels,
     loc="center",
-    ncol=3,
+    ncol=1,
     frameon=False,
     handlelength=1,
     handletextpad=0.5,
