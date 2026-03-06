@@ -5,7 +5,7 @@ import json
 
 def read_computed(method, method_ranker, method_estimator, method_estimator_eval):
     with open(
-        f"../computed/04/{method}#{method_ranker}#{method_estimator}#{method_estimator_eval}.json",
+        f"../computed/02/{method}#{method_ranker}#{method_estimator}#{method_estimator_eval}.json",
         "r",
     ) as f:
         return json.load(f)
@@ -66,6 +66,11 @@ outputs = [
         "method_typst": "Greedy oracle",
         "method_latex": "Greedy oracle",
         "method": "greedy_oracle_invariant",
+    },
+    {
+        "method_typst": "Greedy oracle",
+        "method_latex": None,
+        "method": "greedy_oracle",
     },
     # only for extra
     {
@@ -201,14 +206,14 @@ for ax in axs:
     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.2f}"))  # type: ignore
     ax.set_xlabel("Budget proportion")
-    ax.set_xlim(0.1, 1.0)
+    ax.set_xlim(0.2, 1.0)
 
 
 axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[0].set_ylim(0.88, None)
+axs[0].set_ylim(0.9, 1)
 axs[0].set_ylabel(r"Ranking ($\tau_\omega$)", labelpad=-5)
 axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[1].set_ylim(0.88, None)
+axs[1].set_ylim(0.9, 1)
 axs[1].set_ylabel(r"Stability ($\tau_\omega$)", labelpad=-5)
 # axs[2].set_ylim(50, None)
 # axs[2].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
@@ -268,5 +273,23 @@ outputs = [
     }
     for output in outputs
 ]
+
+for item in outputs:
+    # find greedy oracle additive and set to item_oracle_mean
+    if item["method"] == "greedy_oracle" and item["method_estimator_eval"] == "additive":
+        item_super = [item for item in outputs if item["method"] == "greedy_oracle" and item["method_ranker"] == "random" and item["method_estimator"] == "mean" and item["method_estimator_eval"] == "mean"][0]
+        item["wtau"] = item_super["wtau"]
+        item["evalfocus"] = item_super["evalfocus"]
+        item["tau"] = item_super["tau"]
+        item["avg_pval"] = item_super["avg_pval"]
+
+    # find confusion_minimization with additive method_estimator_eval
+    if item["method"] == "confusion_minimization" and item["method_estimator_eval"] == "additive":
+        item_super = [item for item in outputs if item["method"] == "confusion_minimization" and item["method_ranker"] == item["method_ranker"] and item["method_estimator"] == "mean" and item["method_estimator_eval"] == "mean"][0]
+        item["wtau"] = item_super["wtau"]
+        item["evalfocus"] = item_super["evalfocus"]
+        item["tau"] = item_super["tau"]
+        item["avg_pval"] = item_super["avg_pval"]
+
 with open("../figures/simulation.json", "w") as f:
     json.dump(outputs, f, indent=2)

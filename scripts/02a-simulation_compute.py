@@ -260,9 +260,9 @@ else:
 for key in ["wtau", "evalfocus", "tau", "avg_pval"]:
     print(key, statistics.mean([x[key] for x in output]))
 
-os.makedirs("computed/04/", exist_ok=True)
+os.makedirs("computed/02/", exist_ok=True)
 with open(
-    f"computed/04/{args.method}#{args.method_sorter}#{args.method_estimator}#{args.method_estimator_eval}.json",
+    f"computed/02/{args.method}#{args.method_sorter}#{args.method_estimator}#{args.method_estimator_eval}.json",
     "w",
 ) as f:
     json.dump(output, f)

@@ -45,7 +45,7 @@ def digitize(ys: list[dict[str, int]]):
 plt.figure(figsize=(3.5, 2))
 
 for method in METHODS:
-    with open(f"../computed/04-x/{method['method']}#random#mean#mean.json", "r") as f:
+    with open(f"../computed/05/{method['method']}#random#mean#mean.json", "r") as f:
         data = json.load(f)
     ys = [
         digitize(x["model_estimates_count"])

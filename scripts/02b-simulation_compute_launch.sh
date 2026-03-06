@@ -1,7 +1,7 @@
 # push code to cluster
 rsync -azP --filter=":- .gitignore" --exclude .git/ . euler:/cluster/work/sachan/vilem/evaluation-bandit
 # get results from cluster
-rsync -azP euler:/cluster/work/sachan/vilem/evaluation-bandit/computed/04/ ./computed/04/
+rsync -azP euler:/cluster/work/sachan/vilem/evaluation-bandit/computed/02/ ./computed/02/
 
 function sbatch_cpu() {
     JOB_NAME=$1;

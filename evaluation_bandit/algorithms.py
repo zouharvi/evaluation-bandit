@@ -542,9 +542,6 @@ def greedy_oracle(
     data = list(data)
     models = list(data[0]["scores"].keys())
 
-    if not all([x["cost"] == 1 for x in data]):
-        raise ValueError("All data must have cost 1")
-
     # Track scores and counts for each model
     model_scores = {model: [] for model in models}
     model_estimates_true = estimator_fn(
@@ -687,7 +684,7 @@ def confusion_minimization(
 ) -> list[utils.ModelScores]:
     from scipy.special import ndtr
     if estimator_fn != estimators.mean:
-        raise ValueError("Pairwise confusion minimization only supports mean estimator")
+        raise ValueError("Confusion minimization only supports mean estimator")
 
     data = list(data)
 
@@ -712,7 +709,7 @@ def confusion_minimization(
         models[model]["var"] = max(statistics.variance(models[model]["scores"]), 1e-6)
 
     while budgets:
-        if cost >= budgets[0] or not models:
+        if cost >= budgets[0] or not any([model["alive"] for model in models.values()]):
             budgets = budgets[1:]
             output.append({model: list(models[model]["scores"]) for model in models})
             continue

@@ -12,7 +12,7 @@ def read_computed(fname):
 
 outputs_all = [
     {"name": fname.split("/")[-1].removesuffix(".json"), "data": read_computed(fname)}
-    for fname in sorted(glob.glob("../computed/04/*.json"))
+    for fname in sorted(glob.glob("../computed/02/*.json"))
     if "random" in fname
 ]
 
