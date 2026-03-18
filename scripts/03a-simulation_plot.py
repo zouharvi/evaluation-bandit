@@ -43,7 +43,7 @@ outputs = [
         "method": "weighted_sampling_rankpow2",
     },
     {
-        "method_typst": "Sampling $epsilon$-Greedy",
+        "method_typst": "Sampling $epsilon$-greedy",
         "method_latex": None,
         "method": "weighted_sampling_epsilongreedy",
     },
@@ -113,7 +113,13 @@ outputs = [
         "method_estimator_eval": method_estimator_eval,
     }
     for output in outputs
-    for method_ranker in ["random", "metricavg", "metricavg_cost"]
+    for method_ranker in [
+        "random",
+        "metricavg",
+        "metricavg_cost",
+        "rev_metricavg",
+        "rev_metricavg_cost",
+    ]
     for method_estimator in ["additive", "mean"]
     for method_estimator_eval in ["additive", "count", "mean"]
 ]
@@ -276,16 +282,36 @@ outputs = [
 
 for item in outputs:
     # find greedy oracle additive and set to item_oracle_mean
-    if item["method"] == "greedy_oracle" and item["method_estimator_eval"] == "additive":
-        item_super = [item for item in outputs if item["method"] == "greedy_oracle" and item["method_ranker"] == "random" and item["method_estimator"] == "mean" and item["method_estimator_eval"] == "mean"][0]
+    if (
+        item["method"] == "greedy_oracle"
+        and item["method_estimator_eval"] == "additive"
+    ):
+        item_super = [
+            item
+            for item in outputs
+            if item["method"] == "greedy_oracle"
+            and item["method_ranker"] == "random"
+            and item["method_estimator"] == "mean"
+            and item["method_estimator_eval"] == "mean"
+        ][0]
         item["wtau"] = item_super["wtau"]
         item["evalfocus"] = item_super["evalfocus"]
         item["tau"] = item_super["tau"]
         item["avg_pval"] = item_super["avg_pval"]
 
     # find confusion_minimization with additive method_estimator_eval
-    if item["method"] == "confusion_minimization" and item["method_estimator_eval"] == "additive":
-        item_super = [item for item in outputs if item["method"] == "confusion_minimization" and item["method_ranker"] == item["method_ranker"] and item["method_estimator"] == "mean" and item["method_estimator_eval"] == "mean"][0]
+    if (
+        item["method"] == "confusion_minimization"
+        and item["method_estimator_eval"] == "additive"
+    ):
+        item_super = [
+            item
+            for item in outputs
+            if item["method"] == "confusion_minimization"
+            and item["method_ranker"] == item["method_ranker"]
+            and item["method_estimator"] == "mean"
+            and item["method_estimator_eval"] == "mean"
+        ][0]
         item["wtau"] = item_super["wtau"]
         item["evalfocus"] = item_super["evalfocus"]
         item["tau"] = item_super["tau"]

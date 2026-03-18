@@ -184,6 +184,7 @@ def plot_trace(model_scores, model_ranks, model_counts, plot_name=None):
             color=color,
             s=model_counts[model] * 0.5,
             marker="o",
+            zorder=100 - model_i,
         )
         ax2.text(
             len(ranks) + 50,
