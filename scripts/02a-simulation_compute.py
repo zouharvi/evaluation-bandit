@@ -1,4 +1,4 @@
- # pyright: ignore[reportRedeclaration]
+# pyright: ignore[reportRedeclaration]
 
 from evaluation_bandit import simulation, algorithms, estimators
 import argparse
@@ -6,6 +6,7 @@ import math
 import statistics
 import os
 import json
+import functools
 
 args = argparse.ArgumentParser()
 args.add_argument(
@@ -56,6 +57,13 @@ elif args.method_sorter == "metricavg":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_avg", metric="metric"
     )
+elif args.method_sorter == "rev_metricavg":
+    # negative metric avg
+    fn = simulation.subset2evaluate_to_sorter(method="metric_avg", metric="metric")
+
+    def data_sorter_fn(data):
+        return list(reversed(fn(data)))
+
 elif args.method_sorter == "humanavg":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_avg", metric="human"
@@ -64,6 +72,14 @@ elif args.method_sorter == "metricavg_cost":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_avg", metric="metric", cost_normalize=True
     )
+elif args.method_sorter == "rev_metricavg_cost":
+    fn = simulation.subset2evaluate_to_sorter(
+        method="metric_avg", metric="metric", cost_normalize=True
+    )
+
+    def data_sorter_fn(data):
+        return list(reversed(fn(data)))
+
 elif args.method_sorter == "humanavg_cost":
     data_sorter_fn = simulation.subset2evaluate_to_sorter(
         method="metric_avg", metric="human", cost_normalize=True
@@ -213,8 +229,9 @@ elif args.method == "weighted_sampling_oracle_rankpow2":
         kwargs_fn=dict(sampling_fn=sampling_fn),
     )
 elif args.method == "confusion_minimization":
+
     def sampling_fn(ys, rank, total):
-        return 1 / (rank + 1)**2
+        return 1 / (rank + 1) ** 2
 
     output = simulate(
         algorithms.confusion_minimization,
