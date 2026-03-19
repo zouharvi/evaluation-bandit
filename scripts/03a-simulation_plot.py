@@ -138,6 +138,7 @@ for output in outputs:
         )
 
 
+# %%
 from evaluation_bandit import utils_fig
 import collections
 import numpy as np
@@ -161,7 +162,8 @@ def plot_output(outputs, label, axs, color=None):
     xs = [xs[0]["budget"] for xs in data_by_budget]
     for ax, key in zip(
         axs,
-        ["wtau", "stability"],
+        ["wtau"],
+        # , "stability"
     ):
         ax.plot(
             xs,
@@ -186,7 +188,8 @@ def plot_output(outputs, label, axs, color=None):
             )
 
 
-fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(6, 2.4))
+fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(4, 2.4))
+axs = [axs]
 # axs = axs.flatten()
 
 outputs_to_plot = [
@@ -218,12 +221,15 @@ for ax in axs:
 axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 axs[0].set_ylim(0.9, 1)
 axs[0].set_ylabel(r"Ranking ($\tau_\omega$)", labelpad=-5)
-axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[1].set_ylim(0.9, 1)
-axs[1].set_ylabel(r"Stability ($\tau_\omega$)", labelpad=-5)
+# axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
+# axs[1].set_ylim(0.9, 1)
+# axs[1].set_ylabel(r"Stability ($\tau_\omega$)", labelpad=-5)
 # axs[2].set_ylim(50, None)
 # axs[2].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
 # axs[2].set_ylabel("\nEvaluation focus", labelpad=1)
+
+axs[0].set_facecolor("none")
+fig.patch.set_facecolor("none")
 
 plt.tight_layout(pad=0)
 plt.subplots_adjust(hspace=0.3)
@@ -232,7 +238,7 @@ plt.show()
 
 
 # plot only legend
-fig_legend = plt.figure(figsize=(2, 2.4))
+fig_legend = plt.figure(figsize=(2, 1.2))
 handles, labels = axs[0].get_legend_handles_labels()
 # make the lines three times as thick
 for handle in handles:
@@ -265,7 +271,7 @@ def area_under_curve(outputs, key):
 
 
 outputs = [x for x in outputs if "data" in x]
-outputs = [
+outputs_out = [
     {
         "method": output["method"],
         "method_typst": output["method_typst"],
@@ -280,7 +286,7 @@ outputs = [
     for output in outputs
 ]
 
-for item in outputs:
+for item in outputs_out:
     # find greedy oracle additive and set to item_oracle_mean
     if (
         item["method"] == "greedy_oracle"
@@ -288,7 +294,7 @@ for item in outputs:
     ):
         item_super = [
             item
-            for item in outputs
+            for item in outputs_out
             if item["method"] == "greedy_oracle"
             and item["method_ranker"] == "random"
             and item["method_estimator"] == "mean"
@@ -306,7 +312,7 @@ for item in outputs:
     ):
         item_super = [
             item
-            for item in outputs
+            for item in outputs_out
             if item["method"] == "confusion_minimization"
             and item["method_ranker"] == item["method_ranker"]
             and item["method_estimator"] == "mean"
@@ -318,4 +324,4 @@ for item in outputs:
         item["avg_pval"] = item_super["avg_pval"]
 
 with open("../figures/simulation.json", "w") as f:
-    json.dump(outputs, f, indent=2)
+    json.dump(outputs_out, f, indent=2)
