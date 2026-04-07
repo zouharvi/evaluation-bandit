@@ -1,6 +1,6 @@
 # %%
 
-from evaluation_bandit import algorithms, utils, estimators, simulation
+from evaluation_bandit import algorithms, utils, estimators
 import importlib
 import random
 import statistics
@@ -76,7 +76,9 @@ for _ in range(5):
     )
     results["weighted_sampling"] += algorithms.weighted_sampling(data, budgets=budgets)
     results["confusion_minimization"] += algorithms.confusion_minimization(
-        data, budgets=budgets, coldstart=10,
+        data,
+        budgets=budgets,
+        coldstart=10,
     )
 
 for name, values in results.items():

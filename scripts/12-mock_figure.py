@@ -184,7 +184,6 @@ plt.show()
 
 import random
 import matplotlib.pyplot as plt
-import evaluation_bandit.utils_fig
 import numpy as np
 import statistics
 

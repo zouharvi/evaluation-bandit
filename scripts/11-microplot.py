@@ -42,7 +42,6 @@ plot_microplot("revpow1", lambda x: 1 / (len(x) - x + 1))
 
 import evaluation_bandit.utils_fig
 import evaluation_bandit.utils
-import matplotlib.pyplot as plt
 import statistics
 
 data_all = evaluation_bandit.utils.load_data()
