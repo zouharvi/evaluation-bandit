@@ -231,7 +231,7 @@ plt.show()
 
 
 # plot only legend
-fig_legend = plt.figure(figsize=(2, 1.2))
+fig_legend = plt.figure(figsize=(2.5, 1.2))
 handles, labels = ax.get_legend_handles_labels()
 # make the lines three times as thick
 for handle in handles:

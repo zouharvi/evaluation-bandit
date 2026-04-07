@@ -31,6 +31,27 @@ args.add_argument(
     choices=["mean", "additive", "count"],
 )
 args.add_argument(
+    "--objectives-extra",
+    type=str,
+    default="mean",
+    choices=[
+        "tau",
+        "stability",
+        "evalfocus",
+        "avg_pval",
+        "avg_payoff",
+        "clusters",
+        "wtau_pow1",
+        "wtau_pow2",
+        "wtau_pow05",
+        "wtau_top3",
+        "wtau_top1",
+        "wtau_bot3",
+        "wtau_middle3",
+        "wtau_revpow1",
+    ],
+)
+args.add_argument(
     "--seeds",
     type=int,
     default=100,
