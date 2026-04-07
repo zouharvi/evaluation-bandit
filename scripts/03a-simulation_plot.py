@@ -153,43 +153,43 @@ def smooth(ys):
     return scipy.signal.savgol_filter(ys, 7, 2)
 
 
-def plot_output(outputs, label, axs, color=None):
+outputs_greedy_oracle = [
+    output["data"]
+    for output in outputs
+    if output["method"] == "greedy_oracle"
+    and output["method_ranker"] == "random"
+    and output["method_estimator"] == "mean"
+    and output["method_estimator_eval"] == "mean"
+][0]
+
+
+def plot_output(outputs, label, ax, color=None):
     data_by_budget = collections.defaultdict(list)
     for output in outputs:
         data_by_budget[output["budget"]].append(output)
     data_by_budget = sorted(data_by_budget.values(), key=lambda d: d[0]["budget"])
 
     xs = [xs[0]["budget"] for xs in data_by_budget]
-    for ax, key in zip(
-        axs,
-        ["wtau"],
-        # , "stability"
-    ):
-        ax.plot(
-            xs,
-            smooth([np.mean([x[key] for x in xs]) for xs in data_by_budget]),
-            label=label,
-            color=color,
-            linewidth=2.0,
-            zorder=2 if label == "Uniform" else 1,
-        )
-        if key != "stability":
-            ax.fill_between(
-                xs,
-                smooth(
-                    [np.mean([x[key + "_ci"][0] for x in xs]) for xs in data_by_budget]
-                ),
-                smooth(
-                    [np.mean([x[key + "_ci"][1] for x in xs]) for xs in data_by_budget]
-                ),
-                alpha=0.3,
-                color=color,
-                linewidth=0.0,
-            )
+    ax.plot(
+        xs,
+        smooth([np.mean([x["wtau"] for x in xs]) for xs in data_by_budget]),
+        label=label
+        + f" ({np.mean([x['wtau'] for x in (outputs if label != 'Greedy oracle' else outputs_greedy_oracle)]):.3f})",
+        color=color,
+        linewidth=2.0,
+        zorder=2 if label == "Uniform" else 1,
+    )
+    ax.fill_between(
+        xs,
+        smooth([np.mean([x["wtau_ci"][0] for x in xs]) for xs in data_by_budget]),
+        smooth([np.mean([x["wtau_ci"][1] for x in xs]) for xs in data_by_budget]),
+        alpha=0.3,
+        color=color,
+        linewidth=0.0,
+    )
 
 
-fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(4, 2.4))
-axs = [axs]
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 2.4))
 # axs = axs.flatten()
 
 outputs_to_plot = [
@@ -206,29 +206,22 @@ for output_i, output in enumerate(outputs_to_plot):
     plot_output(
         output["data"],
         output["method_latex"],
-        axs,
+        ax,
         color="black" if output["method"] == "uniform" else f"C{output_i - 1}",
     )
 
-for ax in axs:
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.2f}"))  # type: ignore
-    ax.set_xlabel("Budget proportion")
-    ax.set_xlim(0.2, 1.0)
+ax.spines[["top", "right"]].set_visible(False)
+ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
+ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.2f}"))  # type: ignore
+ax.set_xlabel("Budget proportion")
+ax.set_xlim(0.2, 1.0)
 
 
-axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-axs[0].set_ylim(0.9, 1)
-axs[0].set_ylabel(r"$\tau_\omega$", labelpad=-5)
-# axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
-# axs[1].set_ylim(0.9, 1)
-# axs[1].set_ylabel(r"Stability ($\tau_\omega$)", labelpad=-5)
-# axs[2].set_ylim(50, None)
-# axs[2].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))  # type: ignore
-# axs[2].set_ylabel("\nEvaluation focus", labelpad=1)
+ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
+ax.set_ylim(0.9, 1)
+ax.set_ylabel(r"$\tau_\omega$", labelpad=-5)
 
-axs[0].set_facecolor("none")
+ax.set_facecolor("none")
 fig.patch.set_facecolor("none")
 
 plt.tight_layout(pad=0)
@@ -239,7 +232,7 @@ plt.show()
 
 # plot only legend
 fig_legend = plt.figure(figsize=(2, 1.2))
-handles, labels = axs[0].get_legend_handles_labels()
+handles, labels = ax.get_legend_handles_labels()
 # make the lines three times as thick
 for handle in handles:
     handle.set_linewidth(6.0)

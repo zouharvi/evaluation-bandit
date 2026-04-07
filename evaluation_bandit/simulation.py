@@ -15,6 +15,7 @@ def _simulate(args):
         kwargs_fn,
         estimator_fn,
         BUDGETS,
+        objectives_extra,
     ) = args
     _sum_cost = sum(item["cost"] for item in data)
     _models = len(data[0]["scores"])
@@ -44,13 +45,52 @@ def _simulate(args):
             {
                 "budget": budget_p,
                 "wtau": utils.wtau(model_estimates, model_estimates_true),
-                "evalfocus": utils.evalfocus(model_scores, model_scores_true, budget),
-                "tau": utils.tau(model_estimates, model_estimates_true),
-                "avg_pval": utils.avg_pval(model_scores),
                 "model_estimates": model_estimates,
                 "model_estimates_count": model_estimates_count,
             }
         )
+        if "tau" in objectives_extra:
+            output[-1]["tau"] = utils.tau(model_estimates, model_estimates_true)
+        if "evalfocus" in objectives_extra:
+            output[-1]["evalfocus"] = utils.evalfocus(model_scores, model_scores_true)
+        if "avg_pval" in objectives_extra:
+            output[-1]["avg_pval"] = utils.avg_pval(model_scores)
+        if "avg_payoff" in objectives_extra:
+            output[-1]["avg_payoff"] = utils.avg_payoff(model_scores)
+        if "clusters" in objectives_extra:
+            output[-1]["clusters"] = utils.model_clusters(model_scores)
+        if "wtau_pow1" in objectives_extra:
+            output[-1]["wtau_pow1"] = utils.wtau_pow(
+                model_estimates, model_estimates_true, 1
+            )
+        if "wtau_pow2" in objectives_extra:
+            output[-1]["wtau_pow2"] = utils.wtau_pow(
+                model_estimates, model_estimates_true, 2
+            )
+        if "wtau_pow05" in objectives_extra:
+            output[-1]["wtau_pow05"] = utils.wtau_pow(
+                model_estimates, model_estimates_true, 0.5
+            )
+        if "wtau_top3" in objectives_extra:
+            output[-1]["wtau_top3"] = utils.wtau_topk(
+                model_estimates, model_estimates_true, 3
+            )
+        if "wtau_top1" in objectives_extra:
+            output[-1]["wtau_top1"] = utils.wtau_topk(
+                model_estimates, model_estimates_true, 1
+            )
+        if "wtau_bot3" in objectives_extra:
+            output[-1]["wtau_bot3"] = utils.wtau_botk(
+                model_estimates, model_estimates_true, 3
+            )
+        if "wtau_middle3" in objectives_extra:
+            output[-1]["wtau_middle3"] = utils.wtau_middlek(
+                model_estimates, model_estimates_true, 3
+            )
+        if "wtau_revpow1" in objectives_extra:
+            output[-1]["wtau_revpow1"] = utils.wtau_revpow(
+                model_estimates, model_estimates_true, 1
+            )
     return [result | {"data_name": data_name, "seed": seed} for result in output]
 
 
@@ -63,6 +103,7 @@ def simulate(
     estimator_fn=estimators.mean,
     max_workers=None,
     cache_data_sorter=True,
+    objectives_extra=None,
 ):
     print("Running", fn.__name__, "with", kwargs_fn)
 
@@ -95,6 +136,7 @@ def simulate(
                 kwargs_fn,
                 estimator_fn,
                 BUDGETS,
+                objectives_extra,
             )
             for data_name, data in data_all.items()
             for seed in range(seeds)
@@ -116,9 +158,9 @@ def simulate(
 
     def compute_stats(xs):
         keys_to_aggregate = (
+            "tau",
             "wtau",
             "evalfocus",
-            "tau",
             "avg_pval",
         )
         out = {
@@ -126,8 +168,11 @@ def simulate(
             "budget": xs[0]["budget"],
             "model_estimates_count": [x["model_estimates_count"] for x in xs],
         }
-        out["stability"] = utils.stability([x["model_estimates"] for x in xs])
+        if "stability" in objectives_extra:
+            out["stability"] = utils.stability([x["model_estimates"] for x in xs])
         for key in keys_to_aggregate:
+            if key not in xs[0]:
+                continue
             out[key] = np.mean([x[key] for x in xs])
             out[key + "_ci"] = utils.confidence_interval([x[key] for x in xs])
         return out

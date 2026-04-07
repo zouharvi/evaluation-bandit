@@ -88,10 +88,70 @@ def wtau(
     return val
 
 
+def wtau_pow(
+    model_estimates1: ModelEstimates,
+    model_estimates2: ModelEstimates,
+    k: float,
+) -> float:
+    return wtau(
+        model_estimates1, model_estimates2, weigher=lambda rank: 1 / (rank + 1) ** k
+    )
+
+
+def wtau_topk(
+    model_estimates1: ModelEstimates,
+    model_estimates2: ModelEstimates,
+    k: int,
+) -> float:
+    return wtau(
+        model_estimates1,
+        model_estimates2,
+        weigher=lambda rank: 1 if rank < k else 1 / (len(model_estimates1) - k),
+    )
+
+
+def wtau_botk(
+    model_estimates1: ModelEstimates,
+    model_estimates2: ModelEstimates,
+    k: int,
+) -> float:
+    return wtau(
+        model_estimates1,
+        model_estimates2,
+        weigher=lambda rank: 1
+        if rank >= len(model_estimates1) - k
+        else 1 / (len(model_estimates1) - k),
+    )
+
+
+def wtau_middlek(
+    model_estimates1: ModelEstimates,
+    model_estimates2: ModelEstimates,
+    k: int,
+) -> float:
+    return wtau(
+        model_estimates1,
+        model_estimates2,
+        weigher=lambda rank: 1
+        if len(model_estimates1) / 2 - k / 2 <= rank
+        and rank <= len(model_estimates1) / 2 + k / 2
+        else 1 / (len(model_estimates1) - k),
+    )
+
+
+def wtau_revpow(
+    model_estimates1: ModelEstimates, model_estimates2: ModelEstimates, k: float
+) -> float:
+    return wtau(
+        model_estimates1,
+        model_estimates2,
+        weigher=lambda rank: 1 / (len(model_estimates1) - rank) ** k,
+    )
+
+
 def evalfocus(
     model_scores1: ModelScores,
     model_scores2: ModelScores,
-    budget: int,
     weigher=lambda rank: 1 / (rank + 1) ** 2,
 ) -> float:
     # sort model_score1 by model_scores2
@@ -129,6 +189,10 @@ def avg_pval(model_scores: ModelScores) -> float:
         )
 
     return statistics.mean(p_values)
+
+
+def avg_payoff(model_scores: ModelScores) -> float:
+    return statistics.mean([x for scores in model_scores.values() for x in scores])
 
 
 def model_clusters(model_scores: ModelScores) -> float:

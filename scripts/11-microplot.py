@@ -36,6 +36,9 @@ plot_microplot("bot3", lambda x: [1 if i >= len(x) - 2 else 0 for i in x])
 plot_microplot("middle3", lambda x: [1 if 6 <= i <= 8 else 0 for i in x])
 plot_microplot("pow0.5", lambda x: 1 / x**0.5)
 plot_microplot("revpow1", lambda x: 1 / (len(x) - x + 1))
+plot_microplot(
+    "random", lambda x: sorted(np.random.default_rng(0).random(len(x)), reverse=True)
+)
 
 
 # %%
