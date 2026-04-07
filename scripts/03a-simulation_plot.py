@@ -220,7 +220,7 @@ for ax in axs:
 
 axs[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 axs[0].set_ylim(0.9, 1)
-axs[0].set_ylabel(r"Ranking ($\tau_\omega$)", labelpad=-5)
+axs[0].set_ylabel(r"$\tau_\omega$", labelpad=-5)
 # axs[1].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x * 100)}%"))  # type: ignore
 # axs[1].set_ylim(0.9, 1)
 # axs[1].set_ylabel(r"Stability ($\tau_\omega$)", labelpad=-5)

@@ -5,7 +5,7 @@ import random
 import statistics
 
 # ict_keys(['wmt25_cs-de_DE', 'wmt25_cs-uk_UA', 'wmt25_en-ar_EG', 'wmt25_en-bho_IN', 'wmt25_en-cs_CZ', 'wmt25_en-et_EE', 'wmt25_en-is_IS', 'wmt25_en-it_IT', 'wmt25_en-ja_JP', 'wmt25_en-ko_KR', 'wmt25_en-mas_KE', 'wmt25_en-ru_RU', 'wmt25_en-sr_Cyrl_RS', 'wmt25_en-uk_UA', 'wmt25_en-zh_CN', 'wmt25_ja-zh_CN', 'wmt24_cs-uk', 'wmt24_en-cs', 'wmt24_en-de', 'wmt24_en-es', 'wmt24_en-hi', 'wmt24_en-is', 'wmt24_en-ja', 'wmt24_en-ru', 'wmt24_en-uk', 'wmt24_en-zh', 'wmt24_ja-zh', 'wmt23.sent_en-de', 'wmt23_cs-uk', 'wmt23_de-en', 'wmt23_en-cs', 'wmt23_en-de', 'wmt23_en-ja', 'wmt23_en-zh', 'wmt23_he-en', 'wmt23_ja-en', 'wmt23_zh-en'])
-data = evaluation_bandit.utils.load_data()[("wmt25", "cs-de_DE")]
+data = evaluation_bandit.utils.load_data()[("wmt25", "en-cs_CZ")]
 data = evaluation_bandit.utils.data_humanscores_only(data)
 random.Random(0).shuffle(data)
 
@@ -195,7 +195,7 @@ def plot_trace(model_scores, model_ranks, model_counts, plot_name=None):
         )
 
     ax2.spines[["top", "right"]].set_visible(False)
-    ax2.set_xlabel("Evaluation step")
+    ax2.set_xlabel("Evaluation step $i$")
     ax2.set_xlim(-10, None)
     ax2.invert_yaxis()
     ax2.set_yticks([1, 5, 10, 15, 20])
