@@ -103,7 +103,7 @@ def simulate(
     estimator_fn=estimators.mean,
     max_workers=None,
     cache_data_sorter=True,
-    objectives_extra=None,
+    objectives_extra=[],
 ):
     print("Running", fn.__name__, "with", kwargs_fn)
 
@@ -121,6 +121,7 @@ def simulate(
                 kwargs_fn,
                 estimator_fn,
                 BUDGETS,
+                objectives_extra,
             )
             for data_name, data in data_all.items()
         )
@@ -157,12 +158,7 @@ def simulate(
         data_agg[(item["data_name"], item["budget"])].append(item)
 
     def compute_stats(xs):
-        keys_to_aggregate = (
-            "tau",
-            "wtau",
-            "evalfocus",
-            "avg_pval",
-        )
+        keys_to_aggregate = ["wtau"] + objectives_extra
         out = {
             "data_name": xs[0]["data_name"],
             "budget": xs[0]["budget"],

@@ -32,9 +32,8 @@ args.add_argument(
 )
 args.add_argument(
     "--objectives-extra",
-    type=str,
-    default="mean",
-    choices=[
+    nargs="*",
+    default=[
         "tau",
         "stability",
         "evalfocus",
@@ -163,6 +162,7 @@ def simulate(fn, kwargs_fn={}, **kwargs):
         max_workers=args.max_workers,
         cache_data_sorter=args.method_sorter != "random",
         estimator_fn=estimator_eval_fn,
+        objectives_extra=args.objectives_extra,
         **kwargs,
     )
 

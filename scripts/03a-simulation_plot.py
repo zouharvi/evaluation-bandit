@@ -110,7 +110,7 @@ outputs = [
     | {
         "method_ranker": method_ranker,
         "method_estimator": method_estimator,
-        "method_estimator_eval": method_estimator_eval,
+        "method_estimator_eval": method_estimator,
     }
     for output in outputs
     for method_ranker in [
@@ -118,10 +118,8 @@ outputs = [
         "metricavg",
         "metricavg_cost",
         "rev_metricavg",
-        "rev_metricavg_cost",
     ]
     for method_estimator in ["additive", "mean"]
-    for method_estimator_eval in ["additive", "count", "mean"]
 ]
 
 for output in outputs:
