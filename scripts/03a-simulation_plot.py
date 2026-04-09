@@ -171,8 +171,7 @@ def plot_output(outputs, label, ax, color=None):
     ax.plot(
         xs,
         smooth([np.mean([x["wtau"] for x in xs]) for xs in data_by_budget]),
-        label=label
-        + f" ({np.mean([x['wtau'] for x in (outputs if label != 'Greedy oracle' else outputs_greedy_oracle)]):.3f})",
+        label=label + f" ({np.mean([x['wtau'] for x in outputs]):.3f})",
         color=color,
         linewidth=2.0,
         zorder=2 if label == "Uniform" else 1,
@@ -255,11 +254,28 @@ def area_under_curve(outputs, key):
     if key not in outputs[0]:
         return None
     x = np.mean([x[key] for x in outputs])
-    if key == "evalfocus":
+    if key in {"evalfocus", "avg_payoff"}:
         return f"{x:.1f}"
     else:
         return f"{x:.3f}"
 
+
+OBJECTIVES = [
+    "wtau",
+    "tau",
+    "stability",
+    "evalfocus",
+    "avg_pval",
+    "avg_payoff",
+    "wtau_pow1",
+    "wtau_pow2",
+    "wtau_pow05",
+    "wtau_top3",
+    "wtau_top1",
+    "wtau_bot3",
+    "wtau_middle3",
+    "wtau_revpow1",
+]
 
 outputs = [x for x in outputs if "data" in x]
 outputs_out = [
@@ -269,13 +285,11 @@ outputs_out = [
         "method_ranker": output["method_ranker"],
         "method_estimator": output["method_estimator"],
         "method_estimator_eval": output["method_estimator_eval"],
-        **{
-            key: area_under_curve(output["data"], key)
-            for key in ["wtau", "evalfocus", "tau", "avg_pval", "stability"]
-        },
+        **{key: area_under_curve(output["data"], key) for key in OBJECTIVES},
     }
     for output in outputs
 ]
+
 
 for item in outputs_out:
     # find greedy oracle additive and set to item_oracle_mean
@@ -291,10 +305,8 @@ for item in outputs_out:
             and item["method_estimator"] == "mean"
             and item["method_estimator_eval"] == "mean"
         ][0]
-        item["wtau"] = item_super["wtau"]
-        item["evalfocus"] = item_super["evalfocus"]
-        item["tau"] = item_super["tau"]
-        item["avg_pval"] = item_super["avg_pval"]
+        for key in OBJECTIVES:
+            item[key] = item_super[key]
 
     # find confusion_minimization with additive method_estimator_eval
     if (
@@ -309,10 +321,8 @@ for item in outputs_out:
             and item["method_estimator"] == "mean"
             and item["method_estimator_eval"] == "mean"
         ][0]
-        item["wtau"] = item_super["wtau"]
-        item["evalfocus"] = item_super["evalfocus"]
-        item["tau"] = item_super["tau"]
-        item["avg_pval"] = item_super["avg_pval"]
+        for key in OBJECTIVES:
+            item[key] = item_super[key]
 
 with open("../figures/simulation.json", "w") as f:
     json.dump(outputs_out, f, indent=2)

@@ -36,8 +36,6 @@ done
 done
 done
 
-python3 scripts/02a-simulation_compute.py --method "greedy_oracle_invariant" --method-sorter "random" --method-estimator "mean" --method-estimator-eval "mean" --seeds 1 --max-workers 20
-
 
 # secondary appendix results
 method_estimator=mean
@@ -45,7 +43,7 @@ method_sorter=random
 for method in ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling weighted_sampling_oracle_rank weighted_sampling_oracle_rankpow2; do
     sbatch_cpu \
         "simulation_${method}#${method_sorter}#${method_estimator}" \
-        "python3 scripts/02a-simulation_compute.py --method $method --method-sorter $method_sorter --method-estimator $method_estimator --seeds 100 --max-workers 99" \
+        "python3 scripts/02a-simulation_compute.py --method $method --method-sorter $method_sorter --method-estimator $method_estimator --method-estimator-eval $method_estimator --seeds 100 --max-workers 99" \
     ;
 done
 

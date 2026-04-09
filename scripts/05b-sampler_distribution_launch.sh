@@ -23,4 +23,4 @@ function sbatch_cpu() {
 
 
 
-sbatch_cpu "sampler_distribution" "python3 scripts/05a-sampler_distribution_compute.py"
+sbatch_cpu "sampler_distribution" "python3 scripts/05a-sampler_distribution_compute.py" 
