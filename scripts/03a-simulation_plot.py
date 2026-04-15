@@ -67,11 +67,11 @@ outputs = [
         "method_latex": "Greedy oracle",
         "method": "greedy_oracle_invariant",
     },
-    {
-        "method_typst": "Greedy oracle",
-        "method_latex": None,
-        "method": "greedy_oracle",
-    },
+    # {
+    #     "method_typst": "Greedy oracle",
+    #     "method_latex": None,
+    #     "method": "greedy_oracle",
+    # },
     # only for extra
     {
         "method_typst": "Ambiguity reduction $lambda$=$1$",
@@ -136,7 +136,6 @@ for output in outputs:
         )
 
 
-# %%
 from evaluation_bandit import utils_fig
 import collections
 import numpy as np
@@ -154,7 +153,7 @@ def smooth(ys):
 outputs_greedy_oracle = [
     output["data"]
     for output in outputs
-    if output["method"] == "greedy_oracle"
+    if output["method"] == "greedy_oracle_invariant"
     and output["method_ranker"] == "random"
     and output["method_estimator"] == "mean"
     and output["method_estimator_eval"] == "mean"

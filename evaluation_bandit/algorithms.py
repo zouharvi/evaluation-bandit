@@ -183,7 +183,7 @@ def weighted_sampling(
 
         # we want to estimate given the context of all models, not just the ones running
         model_estimate = estimator_fn(model_scores)
-        models.sort(key=model_estimate.get, reverse=True) # type: ignore
+        models.sort(key=model_estimate.get, reverse=True)  # type: ignore
 
         model = random.choices(
             models,
@@ -388,7 +388,7 @@ def upper_confidence_bound(
         for model in models:
             if variant == "ucb1":
                 # UCB = mean + c * sqrt(ln(total_counts) / model_counts)
-                exploration = c * math.sqrt(ln_total / len(model_scores[model])) # type: ignore
+                exploration = c * math.sqrt(ln_total / len(model_scores[model]))  # type: ignore
             elif variant == "lilucb":
                 # lil' UCB = mean + c * sqrt(ln(ln(model_counts)) / model_counts)
                 # using max(..., 3) to ensure log(log(n)) > 0
@@ -402,7 +402,7 @@ def upper_confidence_bound(
             ucb_scores[model] = model_estimates[model] + exploration
 
         # Select topk models
-        selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk] # type: ignore
+        selected_models = sorted(ucb_scores, key=ucb_scores.get, reverse=True)[:topk]  # type: ignore
 
         for model in selected_models:
             item = data[len(model_scores[model])]
@@ -514,7 +514,9 @@ def thompson_sampling(
             ts_samples[model] = sample
 
         # Select topk models
-        selected_models = sorted(ts_samples, key=ts_samples.get, reverse=True)[:rank_top_k] # type: ignore
+        selected_models = sorted(ts_samples, key=ts_samples.get, reverse=True)[
+            :rank_top_k
+        ]  # type: ignore
 
         for model in selected_models:
             item = data[len(model_scores[model])]
@@ -601,6 +603,9 @@ def greedy_oracle_invariant(
     batch_size_lookahead: int | None = None,
     shuffle_repetitions=5,
     estimator_fn: estimators.Estimator = estimators.mean,
+    objective_fn: Callable[
+        [utils.ModelEstimates, utils.ModelEstimates], float
+    ] = utils.wtau,
 ) -> list[utils.ModelScores]:
     """
     Greedy Oracle for Best Arm Identification invariant to data ordering.
@@ -654,7 +659,7 @@ def greedy_oracle_invariant(
                 for model in model_mask
             }
             for model in models:
-                wtau = utils.wtau(
+                wtau = objective_fn(
                     estimator_fn(model_scores | {model: model_scores_ext[model]}),
                     model_estimates_true,
                 )
@@ -664,11 +669,16 @@ def greedy_oracle_invariant(
         lookahead_wtau = {
             model: statistics.mean(wtaus) for model, wtaus in lookahead_wtau.items()
         }
-        model_best = max(lookahead_wtau, key=lookahead_wtau.get) # type: ignore
+        model_best = max(lookahead_wtau, key=lookahead_wtau.get)  # type: ignore
         model_mask[model_best] += min(
             batch_size, len(data_orig) - model_mask[model_best]
         )
-        cost += sum(x["cost"] for x in data_orig[model_mask[model_best] - batch_size:model_mask[model_best]])
+        cost += sum(
+            x["cost"]
+            for x in data_orig[
+                model_mask[model_best] - batch_size : model_mask[model_best]
+            ]
+        )
 
         models = [model for model in models if model_mask[model] < len(data_orig)]
 
@@ -680,9 +690,12 @@ def confusion_minimization(
     budgets: list[int],
     coldstart=15,
     estimator_fn: estimators.Estimator = estimators.mean,
-    sampling_fn: Callable[[list[float], int, int], float] = lambda scores, rank, total: 1 / (rank + 1),
+    sampling_fn: Callable[[list[float], int, int], float] = lambda scores,
+    rank,
+    total: 1 / (rank + 1),
 ) -> list[utils.ModelScores]:
     from scipy.special import ndtr
+
     if estimator_fn != estimators.mean:
         raise ValueError("Confusion minimization only supports mean estimator")
 
@@ -714,7 +727,9 @@ def confusion_minimization(
             output.append({model: list(models[model]["scores"]) for model in models})
             continue
 
-        models_names = sorted(models.keys(), key=lambda x: models[x]["mean"], reverse=True) # type: ignore
+        models_names = sorted(
+            models.keys(), key=lambda x: models[x]["mean"], reverse=True
+        )  # type: ignore
         for rank, model in enumerate(models_names):
             models[model]["weight"] = sampling_fn(
                 models[model]["scores"],
@@ -741,9 +756,14 @@ def confusion_minimization(
                 mean2 = model2["mean"]
                 var2 = model2["var"]
                 len2 = len(model2["scores"])
-                confusion_delta_local += model2["weight"] * (ndtr(abs(mean1-mean2)/math.sqrt(var1/len1+var2/len2)) - ndtr(abs(mean1-mean2)/math.sqrt(var1/(len1+5)+var2/len2)))
+                confusion_delta_local += model2["weight"] * (
+                    ndtr(abs(mean1 - mean2) / math.sqrt(var1 / len1 + var2 / len2))
+                    - ndtr(
+                        abs(mean1 - mean2) / math.sqrt(var1 / (len1 + 5) + var2 / len2)
+                    )
+                )
 
-            confusion_delta.append((model1["weight"]*confusion_delta_local, model1))
+            confusion_delta.append((model1["weight"] * confusion_delta_local, model1))
 
         model_best = min(confusion_delta, key=lambda x: x[0])[1]
         for _ in range(3):

@@ -1,11 +1,12 @@
 # pyright: ignore[reportRedeclaration]
 
-from evaluation_bandit import simulation, algorithms, estimators
+from evaluation_bandit import simulation, algorithms, estimators, utils
 import argparse
 import math
 import statistics
 import os
 import json
+import functools
 
 args = argparse.ArgumentParser()
 args.add_argument(
@@ -173,12 +174,32 @@ elif args.method == "uniform_nonsquare":
     output = simulate(algorithms.uniform_nonsquare)
 elif args.method == "greedy_oracle":
     output = simulate(
-        algorithms.greedy_oracle, kwargs_fn=dict(batch_size=25, batch_size_lookahead=75)
+        algorithms.greedy_oracle, kwargs_fn=dict(batch_size=25, batch_size_lookahead=50)
     )
-elif args.method == "greedy_oracle_invariant":
+elif args.method.startswith("greedy_oracle_invariant"):
+    method_objective = args.method.removeprefix("greedy_oracle_invariant_")
+    if method_objective == "wtau_pow1":
+        objective_fn = utils.wtau_pow
+    elif method_objective == "wtau_pow2":
+        objective_fn = functools.partial(utils.wtau_pow, k=2)
+    elif method_objective == "wtau_pow05":
+        objective_fn = functools.partial(utils.wtau_pow, k=0.5)
+    elif method_objective == "wtau_pow025":
+        objective_fn = functools.partial(utils.wtau_pow, k=0.25)
+    elif method_objective == "wtau_top3":
+        objective_fn = functools.partial(utils.wtau_topk, k=3)
+    elif method_objective == "wtau_revpow1":
+        objective_fn = utils.wtau_revpow
+    else:
+        raise ValueError(f"Unknown objective: {method_objective}")
     output = simulate(
         algorithms.greedy_oracle_invariant,
-        kwargs_fn=dict(shuffle_repetitions=10, batch_size=25, batch_size_lookahead=75),
+        kwargs_fn=dict(
+            shuffle_repetitions=10,
+            batch_size=15,
+            batch_size_lookahead=50,
+            objective_fn=objective_fn,
+        ),
     )
 elif args.method == "successive_rejects_constant":
     output = simulate(algorithms.successive_rejects, kwargs_fn=dict(phases="constant"))
@@ -198,6 +219,66 @@ elif args.method == "weighted_sampling_rankpow2":
 
     def sampling_fn(ys, rank, total):
         return 1 / ((rank + 1) ** 2)
+
+    output = simulate(
+        algorithms.weighted_sampling,
+        kwargs_fn=dict(
+            sampling_fn=sampling_fn,
+            estimator_fn=estimator_fn,
+        ),
+    )
+elif args.method == "weighted_sampling_rankpow0.5":
+
+    def sampling_fn(ys, rank, total):
+        return 1 / ((rank + 1) ** 0.5)
+
+    output = simulate(
+        algorithms.weighted_sampling,
+        kwargs_fn=dict(
+            sampling_fn=sampling_fn,
+            estimator_fn=estimator_fn,
+        ),
+    )
+elif args.method == "weighted_sampling_rankpow0.25":
+
+    def sampling_fn(ys, rank, total):
+        return 1 / ((rank + 1) ** 0.5)
+
+    output = simulate(
+        algorithms.weighted_sampling,
+        kwargs_fn=dict(
+            sampling_fn=sampling_fn,
+            estimator_fn=estimator_fn,
+        ),
+    )
+elif args.method == "weighted_sampling_ranktop3":
+
+    def sampling_fn(ys, rank, total):
+        return 1 if rank < 3 else 1 / (total - 3)
+
+    output = simulate(
+        algorithms.weighted_sampling,
+        kwargs_fn=dict(
+            sampling_fn=sampling_fn,
+            estimator_fn=estimator_fn,
+        ),
+    )
+elif args.method == "weighted_sampling_ranktop3sqrt":
+
+    def sampling_fn(ys, rank, total):
+        return (1 if rank < 3 else 1 / (total - 3)) ** 0.5
+
+    output = simulate(
+        algorithms.weighted_sampling,
+        kwargs_fn=dict(
+            sampling_fn=sampling_fn,
+            estimator_fn=estimator_fn,
+        ),
+    )
+elif args.method == "weighted_sampling_rankrevpow1":
+
+    def sampling_fn(ys, rank, total):
+        return 1 / (total - rank) ** 1
 
     output = simulate(
         algorithms.weighted_sampling,

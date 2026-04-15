@@ -21,6 +21,13 @@ function sbatch_cpu() {
 }
 
 
+method_estimator=mean
+method_sorter=random
+method=greedy_oracle_invariant
+sbatch_cpu \
+    "simulation_${method}#${method_sorter}#${method_estimator}" \
+    "python3 scripts/02a-simulation_compute.py --method $method --method-sorter $method_sorter --method-estimator $method_estimator --method-estimator-eval $method_estimator --seeds 100 --max-workers 99" \
+;
 
 # random metricvar metricavg diversity_bleu diversity_unigram; do
 
@@ -40,7 +47,8 @@ done
 # secondary appendix results
 method_estimator=mean
 method_sorter=random
-for method in ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling weighted_sampling_oracle_rank weighted_sampling_oracle_rankpow2; do
+# for method in ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling weighted_sampling_oracle_rank weighted_sampling_oracle_rankpow2; do
+for method in weighted_sampling_rankpow0.25 weighted_sampling_rankpow0.5 weighted_sampling_ranktop3 weighted_sampling_ranktop3sqrt weighted_sampling_rankrevpow1 greedy_oracle_invariant_wtau_pow1 greedy_oracle_invariant_wtau_pow2 greedy_oracle_invariant_wtau_pow05 greedy_oracle_invariant_wtau_pow025 greedy_oracle_invariant_wtau_top3 greedy_oracle_invariant_wtau_revpow1; do
     sbatch_cpu \
         "simulation_${method}#${method_sorter}#${method_estimator}" \
         "python3 scripts/02a-simulation_compute.py --method $method --method-sorter $method_sorter --method-estimator $method_estimator --method-estimator-eval $method_estimator --seeds 100 --max-workers 99" \
