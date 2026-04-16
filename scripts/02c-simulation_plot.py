@@ -1,7 +1,6 @@
 # %%
 
 import json
-
 import tqdm
 
 
@@ -41,30 +40,30 @@ outputs = [
     #     "basiconly": True,
     # },
     {
-        "method_typst": "Sampling $\"rank\"^2$",
+        "method_typst": 'Sampling $"rank"^2$',
         "method_latex": None,
         "method": "weighted_sampling_rankpow2",
     },
     {
-        "method_typst": "Sampling $root(2, \"rank\")$",
+        "method_typst": 'Sampling $root(2, "rank")$',
         "method_latex": None,
         "method": "weighted_sampling_rankpow0.5",
         "basiconly": True,
     },
     {
-        "method_typst": "Sampling $root(4, \"rank\")$",
+        "method_typst": 'Sampling $root(4, "rank")$',
         "method_latex": None,
         "method": "weighted_sampling_rankpow0.25",
         "basiconly": True,
     },
     {
-        "method_typst": "Sampling rank $sqrt(\"top 3\")$",
+        "method_typst": 'Sampling rank $sqrt("top 3")$',
         "method_latex": None,
         "method": "weighted_sampling_ranktop3sqrt",
         "basiconly": True,
     },
     {
-        "method_typst": "Sampling $\"rank\"^1$ (rev)",
+        "method_typst": 'Sampling $"rank"^1$ (rev)',
         "method_latex": None,
         "method": "weighted_sampling_rankrevpow1",
         "basiconly": True,
@@ -95,13 +94,13 @@ outputs = [
         "method": "greedy_oracle_invariant_wtau_pow2",
     },
     {
-        "method_typst": "Greedy oracle $\"rank\"^1$",
+        "method_typst": 'Greedy oracle $"rank"^1$',
         "method_latex": None,
         "method": "greedy_oracle_invariant_wtau_pow1",
         "basiconly": True,
     },
     {
-        "method_typst": "Greedy oracle $sqrt(\"rank\")$",
+        "method_typst": 'Greedy oracle $sqrt("rank")$',
         "method_latex": None,
         "method": "greedy_oracle_invariant_wtau_pow05",
         "basiconly": True,
@@ -113,13 +112,13 @@ outputs = [
     #     "basiconly": True,
     # },
     {
-        "method_typst": "Greedy oracle rank $\"top\" 3$",
+        "method_typst": 'Greedy oracle rank $"top" 3$',
         "method_latex": None,
         "method": "greedy_oracle_invariant_wtau_top3",
         "basiconly": True,
     },
     {
-        "method_typst": "Greedy oracle $\"rank\"^1$ (rev)",
+        "method_typst": 'Greedy oracle $"rank"^1$ (rev)',
         "method_latex": None,
         "method": "greedy_oracle_invariant_wtau_revpow1",
         "basiconly": True,
@@ -180,10 +179,14 @@ outputs = [
 ]
 
 for output in tqdm.tqdm(outputs):
-    if output.get("basiconly", False) and (output["method_ranker"] != "random" or output["method_estimator"] != "mean" or output["method_estimator_eval"] != "mean"):
+    if output.get("basiconly", False) and (
+        output["method_ranker"] != "random"
+        or output["method_estimator"] != "mean"
+        or output["method_estimator_eval"] != "mean"
+    ):
         continue
     try:
-        output["data"] = read_computed(
+        output["outputs"] = read_computed(
             output["method"],
             output["method_ranker"],
             output["method_estimator"],
@@ -210,7 +213,7 @@ def smooth(ys):
 
 
 outputs_greedy_oracle = [
-    output["data"]
+    output["outputs"]
     for output in outputs
     if output["method"] == "greedy_oracle_invariant_wtau_pow2"
     and output["method_ranker"] == "random"
@@ -254,12 +257,12 @@ outputs_to_plot = [
     and output["method_ranker"] == "random"
     and output["method_estimator"] == "mean"
     and output["method_estimator_eval"] == "mean"
-    and "data" in output
+    and "outputs" in output
 ]
 
 for output_i, output in enumerate(outputs_to_plot):
     plot_output(
-        output["data"],
+        output["outputs"],
         output["method_latex"],
         ax,
         color="black" if output["method"] == "uniform" else f"C{output_i - 1}",
@@ -335,7 +338,7 @@ OBJECTIVES = [
     "wtau_revpow1",
 ]
 
-outputs = [x for x in outputs if "data" in x]
+outputs = [x for x in outputs if "outputs" in x]
 outputs_out = [
     {
         "method": output["method"],
@@ -343,7 +346,7 @@ outputs_out = [
         "method_ranker": output["method_ranker"],
         "method_estimator": output["method_estimator"],
         "method_estimator_eval": output["method_estimator_eval"],
-        **{key: area_under_curve(output["data"], key) for key in OBJECTIVES},
+        **{key: area_under_curve(output["outputs"], key) for key in OBJECTIVES},
     }
     for output in outputs
 ]
