@@ -23,7 +23,7 @@ function sbatch_cpu() {
 
 method_estimator=mean
 method_sorter=random
-method=greedy_oracle_invariant
+method=greedy_oracle_invariant_wtau_pow2
 sbatch_cpu \
     "simulation_${method}#${method_sorter}#${method_estimator}" \
     "python3 scripts/02a-simulation_compute.py --method $method --method-sorter $method_sorter --method-estimator $method_estimator --method-estimator-eval $method_estimator --seeds 100 --max-workers 99" \
@@ -31,7 +31,7 @@ sbatch_cpu \
 
 # random metricvar metricavg diversity_bleu diversity_unigram; do
 
-for method in uniform uniform_nonsquare greedy_oracle greedy_oracle_invariant confusion_minimization successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
+for method in uniform uniform_nonsquare greedy_oracle_invariant_wtau_pow2 confusion_minimization successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
 # TODO: run and then get main simulation results(03a-) but also distribution (05a-) based on stored model_estimates
 for method_estimator in mean additive; do
 for method_sorter in random metricavg metricavg_cost rev_metricavg; do
@@ -47,8 +47,7 @@ done
 # secondary appendix results
 method_estimator=mean
 method_sorter=random
-# for method in ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling weighted_sampling_oracle_rank weighted_sampling_oracle_rankpow2; do
-for method in weighted_sampling_rankpow0.25 weighted_sampling_rankpow0.5 weighted_sampling_ranktop3 weighted_sampling_ranktop3sqrt weighted_sampling_rankrevpow1 greedy_oracle_invariant_wtau_pow1 greedy_oracle_invariant_wtau_pow2 greedy_oracle_invariant_wtau_pow05 greedy_oracle_invariant_wtau_pow025 greedy_oracle_invariant_wtau_top3 greedy_oracle_invariant_wtau_revpow1; do
+for method in ambiguity_reduction_11 ambiguity_reduction_01 ambiguity_reduction_10 successive_halving pvalue_rejects thompson_sampling weighted_sampling_oracle_rank weighted_sampling_oracle_rankpow2 weighted_sampling_rankpow0.25 weighted_sampling_rankpow0.5 weighted_sampling_ranktop3 weighted_sampling_ranktop3sqrt weighted_sampling_rankrevpow1 greedy_oracle_invariant_wtau_pow1 greedy_oracle_invariant_wtau_pow2 greedy_oracle_invariant_wtau_pow05 greedy_oracle_invariant_wtau_pow025 greedy_oracle_invariant_wtau_top3 greedy_oracle_invariant_wtau_revpow1; do
     sbatch_cpu \
         "simulation_${method}#${method_sorter}#${method_estimator}" \
         "python3 scripts/02a-simulation_compute.py --method $method --method-sorter $method_sorter --method-estimator $method_estimator --method-estimator-eval $method_estimator --seeds 100 --max-workers 99" \

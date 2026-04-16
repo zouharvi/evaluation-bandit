@@ -179,7 +179,7 @@ elif args.method == "greedy_oracle":
 elif args.method.startswith("greedy_oracle_invariant"):
     method_objective = args.method.removeprefix("greedy_oracle_invariant_")
     if method_objective == "wtau_pow1":
-        objective_fn = utils.wtau_pow
+        objective_fn = functools.partial(utils.wtau_pow, k=1)
     elif method_objective == "wtau_pow2":
         objective_fn = functools.partial(utils.wtau_pow, k=2)
     elif method_objective == "wtau_pow05":
@@ -189,7 +189,7 @@ elif args.method.startswith("greedy_oracle_invariant"):
     elif method_objective == "wtau_top3":
         objective_fn = functools.partial(utils.wtau_topk, k=3)
     elif method_objective == "wtau_revpow1":
-        objective_fn = utils.wtau_revpow
+        objective_fn = functools.partial(utils.wtau_revpow, k=1)
     else:
         raise ValueError(f"Unknown objective: {method_objective}")
     output = simulate(

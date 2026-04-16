@@ -2,6 +2,8 @@
 
 import json
 
+import tqdm
+
 
 def read_computed(method, method_ranker, method_estimator, method_estimator_eval):
     with open(
@@ -32,15 +34,40 @@ outputs = [
         "method_latex": "Sampling rank",
         "method": "weighted_sampling_rank",
     },
+    # {
+    #     "method_typst": "Sampling $\"rank\"^1$ (oracle)",
+    #     "method_latex": None,
+    #     "method": "weighted_sampling_oracle_rank",
+    #     "basiconly": True,
+    # },
     {
-        "method_typst": "Sampling rank (oracle)",
-        "method_latex": None,
-        "method": "weighted_sampling_oracle_rank",
-    },
-    {
-        "method_typst": "Sampling rank$#none^2$",
+        "method_typst": "Sampling $\"rank\"^2$",
         "method_latex": None,
         "method": "weighted_sampling_rankpow2",
+    },
+    {
+        "method_typst": "Sampling $root(2, \"rank\")$",
+        "method_latex": None,
+        "method": "weighted_sampling_rankpow0.5",
+        "basiconly": True,
+    },
+    {
+        "method_typst": "Sampling $root(4, \"rank\")$",
+        "method_latex": None,
+        "method": "weighted_sampling_rankpow0.25",
+        "basiconly": True,
+    },
+    {
+        "method_typst": "Sampling rank $sqrt(\"top 3\")$",
+        "method_latex": None,
+        "method": "weighted_sampling_ranktop3sqrt",
+        "basiconly": True,
+    },
+    {
+        "method_typst": "Sampling $\"rank\"^1$ (rev)",
+        "method_latex": None,
+        "method": "weighted_sampling_rankrevpow1",
+        "basiconly": True,
     },
     {
         "method_typst": "Sampling $epsilon$-greedy",
@@ -65,43 +92,73 @@ outputs = [
     {
         "method_typst": "Greedy oracle",
         "method_latex": "Greedy oracle",
-        "method": "greedy_oracle_invariant",
+        "method": "greedy_oracle_invariant_wtau_pow2",
+    },
+    {
+        "method_typst": "Greedy oracle $\"rank\"^1$",
+        "method_latex": None,
+        "method": "greedy_oracle_invariant_wtau_pow1",
+        "basiconly": True,
+    },
+    {
+        "method_typst": "Greedy oracle $sqrt(\"rank\")$",
+        "method_latex": None,
+        "method": "greedy_oracle_invariant_wtau_pow05",
+        "basiconly": True,
     },
     # {
-    #     "method_typst": "Greedy oracle",
+    #     "method_typst": "Greedy oracle $root(4, \"rank\")$",
     #     "method_latex": None,
-    #     "method": "greedy_oracle",
+    #     "method": "greedy_oracle_invariant_wtau_pow025",
+    #     "basiconly": True,
     # },
-    # only for extra
+    {
+        "method_typst": "Greedy oracle rank $\"top\" 3$",
+        "method_latex": None,
+        "method": "greedy_oracle_invariant_wtau_top3",
+        "basiconly": True,
+    },
+    {
+        "method_typst": "Greedy oracle $\"rank\"^1$ (rev)",
+        "method_latex": None,
+        "method": "greedy_oracle_invariant_wtau_revpow1",
+        "basiconly": True,
+    },
     {
         "method_typst": "Ambiguity reduction $lambda$=$1$",
         "method_latex": None,
         "method": "ambiguity_reduction_11",
+        "basiconly": True,
     },
     {
         "method_typst": "Ambiguity reduction $lambda$=$0$",
         "method_latex": None,
         "method": "ambiguity_reduction_01",
+        "basiconly": True,
     },
     {
         "method_typst": "Ambiguity reduction $lambda$=$infinity$",
         "method_latex": None,
         "method": "ambiguity_reduction_10",
+        "basiconly": True,
     },
     {
         "method_typst": "Thompson sampling",
         "method_latex": None,
         "method": "thompson_sampling",
+        "basiconly": True,
     },
     {
         "method_typst": "$p$-value rejects",
         "method_latex": None,
         "method": "pvalue_rejects",
+        "basiconly": True,
     },
     {
         "method_typst": "Successive halving",
         "method_latex": None,
         "method": "successive_halving",
+        "basiconly": True,
     },
 ]
 
@@ -122,7 +179,9 @@ outputs = [
     for method_estimator in ["additive", "mean"]
 ]
 
-for output in outputs:
+for output in tqdm.tqdm(outputs):
+    if output.get("basiconly", False) and (output["method_ranker"] != "random" or output["method_estimator"] != "mean" or output["method_estimator_eval"] != "mean"):
+        continue
     try:
         output["data"] = read_computed(
             output["method"],
@@ -153,7 +212,7 @@ def smooth(ys):
 outputs_greedy_oracle = [
     output["data"]
     for output in outputs
-    if output["method"] == "greedy_oracle_invariant"
+    if output["method"] == "greedy_oracle_invariant_wtau_pow2"
     and output["method_ranker"] == "random"
     and output["method_estimator"] == "mean"
     and output["method_estimator_eval"] == "mean"

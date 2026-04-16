@@ -9,7 +9,7 @@ from evaluation_bandit import utils_fig
 import matplotlib.pyplot as plt
 
 METHODS = [
-    {"method_latex": "Uniform", "method": "uniform", "color": "black"},
+    {"method_latex": "Uniform", "method": "uniform_nonsquare", "color": "black"},
     {
         "method_latex": "Sampling rank",
         "method": "weighted_sampling_rank",
@@ -17,7 +17,7 @@ METHODS = [
     },
     {
         "method_latex": "Greedy oracle",
-        "method": "greedy_oracle_invariant",
+        "method": "greedy_oracle_invariant_wtau_pow2",
         "color": utils_fig.COLORS[4],
     },
     {
@@ -45,7 +45,7 @@ def digitize(ys: list[dict[str, int]]):
 plt.figure(figsize=(3.5, 2))
 
 for method in METHODS:
-    with open(f"../computed/05/{method['method']}#random#mean#mean.json", "r") as f:
+    with open(f"../computed/02/{method['method']}#random#mean#mean.json", "r") as f:
         data = json.load(f)
     ys = [
         digitize(x["model_estimates_count"])
