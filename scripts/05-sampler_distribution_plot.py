@@ -70,22 +70,26 @@ plt.gca().spines[["top", "right"]].set_visible(False)
 plt.tight_layout(pad=0)
 box = plt.gca().get_position()
 handles, labels = plt.gca().get_legend_handles_labels()
+
+plt.gca().set_facecolor("none")
+plt.gcf().patch.set_facecolor("none")
+
 plt.savefig("../figures/sampler_distribution.svg")
 plt.show()
 
 # plot only legend
-fig_legend = plt.figure(figsize=(3.5, 0.6))
+fig_legend = plt.figure(figsize=(2.5, 1.2))
 
 # make the lines three times as thick
 for handle in handles:
-    handle.set_linewidth(6.0) # type: ignore
+    handle.set_linewidth(6.0)  # type: ignore
 
 plt.legend(
     handles,
     labels,
     frameon=False,
     loc="center",
-    ncols=2,
+    ncols=1,
     handlelength=1,
     handletextpad=0.5,
     columnspacing=1,
