@@ -25,7 +25,7 @@ outputs = [
     },
     {
         "method_typst": "Successive rejects",
-        "method": "successive_rejects_constant",
+        "method": "successive_rejects",
     },
     {
         "method_typst": "Sampling rank",
@@ -47,10 +47,10 @@ outputs = [
         "method_typst": "Confusion minimization",
         "method": "confusion_minimization",
     },
-    {
-        "method_typst": "Greedy oracle",
-        "method": "greedy_oracle_invariant_wtau_pow2",
-    },
+    # {
+    #     "method_typst": "Greedy oracle",
+    #     "method": "greedy_oracle_invariant_wtau_pow2",
+    # },
 ]
 
 outputs = [
