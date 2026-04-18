@@ -139,7 +139,7 @@ def plot_trace(ax, model_scores, plot_name=None):
 model_scores_all = {
     "model A": [92, 100, 50, 80, 80, 60, 100, 90, 90],
     "model B": [78, 100, 60, 100, 51, 70, 70, 40, 80],
-    "model C": [45, 75, 40, 60, 80, 50, 50, 40],
+    "model C": [45, 75, 40, 60, 60, 50, 50, 40],
     "model D": [10, 75, 40, 30, 50, 30, 70, 80],
 }
 
@@ -252,4 +252,77 @@ plt.show()
 
 # %%
 
-# TODO: unconstrained
+# TODO: additive
+
+progress = {
+    "model A": [1, 1, 1, 1, 1, 0],
+    "model B": [1, 1, 1, 1, 0, 0],
+    "model C": [1, 1, 0, 0, 0, 0],
+    "model D": [1, 1, 0, 0, 0, 0],
+}
+
+
+def item_to_color(score):
+    return plt.cm.RdYlGn(score / 100)
+
+
+# have a grid 4x10 with some items (circles) filled left to right
+plt.figure(figsize=(4, 2.5))
+
+for model_i, (model, model_progress) in enumerate(progress.items()):
+    for i, x in enumerate(model_progress):
+        if x == 0:
+            break
+        score = model_scores_all[model][i + 2]
+        color = item_to_color(score)
+        plt.plot(i, model_i, "o", markersize=18, color=color)
+    for i in range(i, 5):
+        score = model_scores_all[model][i + 1]
+        color = item_to_color(score)
+        plt.scatter(
+            i,
+            model_i,
+            marker="s",
+            s=300,
+            facecolors=color,
+            edgecolors="black",
+            linewidths=1.5,
+            linestyles=":",
+        )
+
+
+for model_i, i, offset_x, offset_y in [
+    (1, 4.5, 0, 0.2),
+    (2, 4.5, 0, 0.2),
+    (3, 4.5, 0.3, 0),
+    (4, 4.5, 0.3, 0),
+]:
+    plt.annotate(
+        "",
+        xy=(i + offset_x, model_i + offset_y),
+        xytext=(5.4, 2),
+        arrowprops=dict(
+            arrowstyle="->", color="black", lw=1, connectionstyle="arc3,rad=0.1"
+        ),
+    )
+
+plt.text(
+    5.5,
+    2,
+    "predicted missing\nvalues ($r_{x,m}$) for\nunbiased model mean\n($\\mu_m$) estimation",
+    fontsize=8,
+    ha="left",
+    va="center",
+)
+
+
+plt.xlim(-0.5, 9.2)
+plt.ylim(-0.3, len(progress) - 0.7)
+plt.xticks(range(10), range(1, 11))
+plt.yticks(range(len(progress)), progress.keys())
+plt.gca().invert_yaxis()
+plt.xlabel("Evaluation item")
+plt.gca().spines[["top", "right"]].set_visible(False)
+plt.tight_layout(pad=0.1)
+plt.savefig("../figures/intro_figure_linear.svg")
+plt.show()
