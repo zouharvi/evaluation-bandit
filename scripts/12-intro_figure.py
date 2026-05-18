@@ -216,7 +216,6 @@ for model_i, i, offset_x, offset_y in [
         ),
     )
 
-# TODO: plot to the four last circles and describe it as "available model+item to evaluate next"
 plt.annotate(
     "model A was\nevaluated last\n(step 13) on\nitem 5 with\nhigh score (green)",
     xy=(4, 0.2),  # slightly top right from the circle at (4, 0)
@@ -251,8 +250,6 @@ plt.savefig("../figures/intro_figure_constrained.svg")
 plt.show()
 
 # %%
-
-# TODO: additive
 
 progress = {
     "model A": [1, 1, 1, 1, 1, 0],

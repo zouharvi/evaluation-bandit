@@ -32,7 +32,7 @@ sbatch_cpu \
 # random metricvar metricavg diversity_bleu diversity_unigram; do
 
 for method in uniform uniform_nonsquare greedy_oracle_invariant_wtau_pow2 confusion_minimization successive_rejects_constant weighted_sampling_rank weighted_sampling_rankpow2 weighted_sampling_bolzmann weighted_sampling_epsilongreedy ucb; do
-# TODO: run and then get main simulation results(03a-) but also distribution (05a-) based on stored model_estimates
+# NOTE: run and then get main simulation results(03a-) but also distribution (05a-) based on stored model_estimates
 for method_estimator in mean additive; do
 for method_sorter in random metricavg metricavg_cost rev_metricavg; do
     sbatch_cpu \
