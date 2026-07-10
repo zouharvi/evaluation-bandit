@@ -1,4 +1,4 @@
-# Allocating Human Evaluation via Bandits
+# Dynamically Allocating Evaluation Effort for Model Ranking
 
 > **Abstract:**
 > While human evaluation is the gold standard in many NLP tasks, it suffers from prohibitive costs and poor scalability.
