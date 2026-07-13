@@ -293,7 +293,7 @@ def load_data(
 
 def load_data_synth(
     seed=0, models=100, items=500, heteroscedastic=False, bins=None, **kwargs
-) -> dict[str, list[dict]]:
+) -> list[dict[str, list[dict]]]:
     import numpy as np
 
     random = np.random.RandomState(seed)
