@@ -88,6 +88,12 @@ plt.show()
 
 # %%
 
+from evaluation_bandit import utils, utils_fig
+import matplotlib.pyplot as plt
+import numpy as np
+import statistics
+from scipy.stats import beta, norm
+import random
 
 fig, axs = plt.subplots(5, 6, figsize=(10, 5))
 
@@ -127,4 +133,70 @@ for (data_name, data), ax in zip(data_all.items(), axs.flat):
     ax.spines[["top", "right"]].set_visible(False)
 plt.tight_layout(pad=0.5)
 plt.savefig("../figures/histogram_models_variance.svg")
+plt.show()
+
+# %%
+
+fig, axs = plt.subplots(5, 6, figsize=(10, 4.5))
+data_all = utils.data_humanscores_only(utils.load_data(include_ref=True))
+data_all = {
+    k: v
+    for k, v in data_all.items()
+    if len(v) > 15
+    # and statistics.variance(utils.items_to_model_scores(v, average=True).values()) >= 20
+    and "refA" in v[0]["scores"]
+    and utils.items_to_model_scores(v, average=True)["refA"] < statistics.mean(utils.items_to_model_scores(v, average=True).values()) + 20
+    and statistics.mean(utils.items_to_model_scores(v, average=True).values()) > 10
+}
+
+for (data_name, data), ax in zip(data_all.items(), axs.flat):
+    scores_avg = utils.items_to_model_scores(data, average=True)
+    print(data_name, scores_avg["refA"], statistics.mean(scores_avg.values()))
+
+    counts, bins, _ = ax.hist(list(scores_avg.values()), bins=range(0, 110, 10), color="black")
+
+
+    ax.axvline(
+        x=scores_avg["refA"],
+        color="tab:red",
+        linewidth=2,
+    )
+    ax.text(
+        scores_avg["refA"] + 1,
+        12,
+        "human",
+        fontsize=10,
+        rotation=90,
+        va="top",
+        color="tab:red",
+    )
+    
+    # data name
+    ax.text(
+        5,
+        12,
+        "/".join(data_name)
+        .replace("-", r"${\rightarrow}$")
+        .split("_")[0]
+        .replace("wmt", "WMT")
+        .replace(".sent", "")
+        .removeprefix("WMT"),
+        fontsize=10,
+    )
+
+    ax.set_yticks([])
+
+    if ax not in axs[-1, :]:
+        ax.set_xticks([])
+    else:
+        ax.set_xticks([0, 100])
+        ax.set_xlabel(r"$\mu$", fontsize=10, labelpad=-7, rotation=0)
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 16)
+    ax.set_facecolor("none")
+    ax.spines[["top", "right"]].set_visible(False)
+
+plt.gcf().patch.set_alpha(0)
+plt.tight_layout(pad=0.5)
+plt.savefig("../figures/histogram_models_humans.svg")
 plt.show()
