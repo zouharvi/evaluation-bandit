@@ -158,7 +158,7 @@ for (data_name, data), ax in zip(data_all.items(), axs.flat):
 
     ax.axvline(
         x=scores_avg["refA"],
-        color="tab:red",
+        color="#d75",
         linewidth=2,
     )
     ax.text(
@@ -168,7 +168,7 @@ for (data_name, data), ax in zip(data_all.items(), axs.flat):
         fontsize=10,
         rotation=90,
         va="top",
-        color="tab:red",
+        color="#d75",
     )
     
     # data name
@@ -189,14 +189,17 @@ for (data_name, data), ax in zip(data_all.items(), axs.flat):
     if ax not in axs[-1, :]:
         ax.set_xticks([])
     else:
-        ax.set_xticks([0, 100])
-        ax.set_xlabel(r"$\mu$", fontsize=10, labelpad=-7, rotation=0)
+        ax.set_xticks([0, 100], ["  0%", "100%  "])
+        ax.set_xlabel("quality  ", fontsize=10, labelpad=-8)
+
+    if ax in axs[:, 0]:
+        ax.set_ylabel("#models", fontsize=10)
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 16)
     ax.set_facecolor("none")
     ax.spines[["top", "right"]].set_visible(False)
 
 plt.gcf().patch.set_alpha(0)
-plt.tight_layout(pad=0.5)
+plt.tight_layout(pad=0)
 plt.savefig("../figures/histogram_models_humans.svg")
 plt.show()
