@@ -1,4 +1,4 @@
-# Dynamically Allocating Evaluation Effort for Model Ranking
+# Dynamically Allocating Evaluation Effort for Model Ranking [![Paper](https://img.shields.io/badge/📜%20paper-481.svg)](https://arxiv.org/abs/2608.03437)
 
 > **Abstract:**
 > While human evaluation is the gold standard in many NLP tasks, it suffers from prohibitive costs and poor scalability.
@@ -8,7 +8,7 @@
 > We prove the optimality of the proposed algorithms and show that it improves discrimination between top-performing models.
 > This makes evaluations faster, cheaper and more aligned with large-scale competition evaluation goals.
 
-This repository contains experiments and analyses.
+This repository contains experiments and analyses for the paper [Dynamically Allocating Evaluation Effort for Model Ranking](https://arxiv.org/abs/2608.03437).
 If you are interested in the annotation interface for dynamic evaluation, please see [Pearmut](https://github.com/zouharvi/pearmut).
 
 <img src="misc/intro_figure.svg" width="400px">
@@ -54,8 +54,8 @@ python3 12-mock_figure.py
 @misc{zouhar2026dynamically,
   title={Dynamically Allocating Evaluation Effort for Model Ranking},
   author={Vilém Zouhar and Julia Kreutzer and Alon Lavie and Tom Kocmi and Matt Post and Ondřej Bojar and Mrinmaya Sachan},
-  note={In preparation},
-  url={https://vilda.net/papers/evaluation_bandit.pdf},
+  note={Preprint},
+  url={https://arxiv.org/abs/2608.03437},
   year={2026},
 }
 ```
