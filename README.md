@@ -51,11 +51,14 @@ python3 12-mock_figure.py
 ## Bibliography
 
 ```bibtex
-@misc{zouhar2026dynamically,
-  title={Dynamically Allocating Evaluation Effort for Model Ranking},
-  author={Vilém Zouhar and Julia Kreutzer and Alon Lavie and Tom Kocmi and Matt Post and Ondřej Bojar and Mrinmaya Sachan},
-  note={Preprint},
-  url={https://arxiv.org/abs/2608.03437},
-  year={2026},
+@misc{zouhar2026dynamicallyallocatingevaluationeffort,
+      title={Dynamically Allocating Evaluation Effort for Model Ranking}, 
+      author={Vilém Zouhar and Julia Kreutzer and Alon Lavie and Tom Kocmi and Matt Post and Ondřej Bojar and Mrinmaya Sachan},
+      year={2026},
+      eprint={2608.03437},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2608.03437}, 
+}
 }
 ```
