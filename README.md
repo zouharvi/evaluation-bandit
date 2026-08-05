@@ -58,7 +58,6 @@ python3 12-mock_figure.py
       eprint={2608.03437},
       archivePrefix={arXiv},
       primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2608.03437}, 
-}
+      url={https://arxiv.org/abs/2608.03437},
 }
 ```
